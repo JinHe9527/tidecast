@@ -52,7 +52,7 @@ predict::supply<DUSDC>(predict, Coin<DUSDC>, clock, ctx) -> Coin<PLP>   # LP vau
 predict::withdraw<DUSDC>(predict, Coin<PLP>, clock, ctx) -> Coin<DUSDC>
 ```
 
-- Verified quote: BTC spot 62575368041947 (13-dec, ~$62,575); 10 dUSDC UP @ ATM strike → `(5022519, 4822543)` ≈ 0.50/0.48 — SVI pricing is live and sane.
+- Verified quote: BTC spot 62575368041947 (9-decimal fixed point, = $62,575.368); 10 dUSDC UP @ ATM strike → `(5022519, 4822543)` ≈ 0.50/0.48 — SVI pricing is live and sane.
 - Strike grid: `min_strike` 50000000000000, `tick_size` 1000000000 (from `/predicts/:id/oracles`).
 - Oracles roll sub-hourly; each `OracleSVI` has expiry/active/settlement_price; status via `oracle::status(oracle, clock)`.
 
@@ -123,6 +123,6 @@ bunx tsc --noEmit
 
 - dUSDC has **no public mint**. Demo needs real dUSDC in the test wallet (requested from community / official form). Quotes (devInspect) and all reads work WITHOUT dUSDC — build read-only surfaces first.
 - PredictManager is shared: anyone can pass it to entry calls, contract checks owner internally; `redeem_permissionless` allows third-party settlement.
-- Strike/price values are 13-decimal fixed-point on the oracle side (62575368041947 = $62,575.37); dUSDC amounts are 6-decimal.
+- Strike/price values are 9-decimal fixed point (62575368041947 = $62,575.368; tick 1e9 = $1); dUSDC amounts are 6-decimal.
 - `mint` aborts if oracle expired/inactive — always check `oracle::status` / server `status` before quoting.
 - No own Move package is strictly required (pure integration). If submission demands a Package ID, consider a thin helper module later — do not build speculatively.

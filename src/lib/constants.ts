@@ -28,6 +28,9 @@ export const SUI_CLOCK_ID = "0x6";
 /** Local desktop wallet secret (suiprivkey1...) — seeds the wallet on first run. */
 export const TIDECAST_KEYPAIR = import.meta.env.VITE_TIDECAST_KEYPAIR ?? "";
 
+/** Funded test wallet — devInspect sender fallback before the local wallet loads. */
+export const TEST_WALLET = "0xce98556a6a7f924b32d8f4c03ac74d60c34447cff47856402f5bbcf97393a14f";
+
 export const fmtUsd = (raw: bigint | number, digits = 0): string =>
   `$${(Number(raw) / 10 ** PRICE_DECIMALS).toLocaleString(undefined, {
     minimumFractionDigits: digits,

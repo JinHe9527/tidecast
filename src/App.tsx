@@ -1,8 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Waves } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PriceHeader } from "@/components/PriceHeader";
+import { ExpiryPicker } from "@/components/ExpiryPicker";
+import { StrikeLadder } from "@/components/StrikeLadder";
+import { TicketPanel } from "@/components/TicketPanel";
+import { useOracles } from "@/hooks/useOracles";
+import { usePrice } from "@/hooks/usePrice";
+import { useDebounced, useQuote, type Direction } from "@/hooks/useQuote";
 import { useWallet } from "@/stores/walletStore";
 import { shortenAddress } from "@/lib/utils";
+import { DUSDC } from "@/lib/constants";
 
 export function App() {
   const initWallet = useWallet((s) => s.init);
@@ -10,6 +18,32 @@ export function App() {
   useEffect(() => {
     initWallet();
   }, [initWallet]);
+
+  const [oracleId, setOracleId] = useState<string | null>(null);
+  const [pickedStrike, setPickedStrike] = useState<number | null>(null);
+  const [direction, setDirection] = useState<Direction>("up");
+  const [amount, setAmount] = useState(10);
+
+  const { data: oracles, isPending: oraclesPending } = useOracles();
+  // Drop rows past expiry the server hasn't flipped yet; when the picked oracle
+  // expires out of the list, fall to the next-nearest expiry.
+  const live = (oracles ?? []).filter((o) => o.expiry > Date.now());
+  const oracle = live.find((o) => o.oracle_id === oracleId) ?? live[0];
+  const { data: price } = usePrice(oracle?.oracle_id);
+
+  // Spot floored to the strike grid — ladder center and default selection.
+  const atm =
+    price && oracle ? Math.floor(price.spot / oracle.tick_size) * oracle.tick_size : undefined;
+  const strike = pickedStrike ?? atm;
+
+  const debouncedAmount = useDebounced(amount, 400);
+  const quote = useQuote({
+    oracleId: oracle?.oracle_id,
+    expiry: oracle?.expiry,
+    strike,
+    direction,
+    amountRaw: Math.round(debouncedAmount * 10 ** DUSDC.DECIMALS),
+  });
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-canvas text-ink">
@@ -27,8 +61,38 @@ export function App() {
           <ThemeToggle />
         </div>
       </header>
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-sm text-ink-subtle">Reading the tide… (data layer lands next)</p>
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto grid w-full max-w-4xl gap-8 px-6 py-8 md:grid-cols-[minmax(0,1fr)_300px]">
+          <section className="flex min-w-0 flex-col gap-7">
+            <PriceHeader price={price} />
+            <ExpiryPicker
+              isPending={oraclesPending}
+              oracles={live}
+              selectedId={oracle?.oracle_id}
+              onSelect={setOracleId}
+            />
+            <StrikeLadder
+              atm={atm}
+              minStrike={oracle?.min_strike ?? 0}
+              selected={strike}
+              tickSize={oracle?.tick_size}
+              onSelect={setPickedStrike}
+            />
+          </section>
+          <aside className="md:sticky md:top-8 md:self-start">
+            <TicketPanel
+              amount={amount}
+              direction={direction}
+              error={quote.error}
+              expiry={oracle?.expiry}
+              isFetching={quote.isFetching || amount !== debouncedAmount}
+              quote={quote.data}
+              strike={strike}
+              onAmount={setAmount}
+              onDirection={setDirection}
+            />
+          </aside>
+        </div>
       </main>
     </div>
   );

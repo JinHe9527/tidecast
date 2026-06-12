@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Loader2, TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useManager } from "@/hooks/useManager";
 import {
@@ -44,16 +44,23 @@ interface RowProps {
   status: PositionStatus;
   onRedeem: () => void;
   isRedeeming: boolean;
+  isNew: boolean;
 }
 
-function PositionRow({ position: p, status, onRedeem, isRedeeming }: RowProps) {
+function PositionRow({ position: p, status, onRedeem, isRedeeming, isNew }: RowProps) {
   const value = usePositionValue(p, status === "active");
   // Settled value is on-chain fact (1 dUSDC per unit if right); active value is a live bid quote.
   const est = status === "won" ? BigInt(p.quantity) : status === "lost" ? 0n : value.data;
   const pnl = est === undefined ? undefined : Number(est) - p.cost;
 
   return (
-    <div className={cn(GRID, "rounded-lg px-3 py-2.5 text-sm tabular-nums hover:bg-surface-2")}>
+    <div
+      className={cn(
+        GRID,
+        "rounded-lg px-3 py-2.5 text-sm tabular-nums hover:bg-surface-2",
+        isNew && "row-flash", // one-shot pulse when a fresh mint lands in the list
+      )}
+    >
       <span className="flex items-center gap-1.5 truncate text-ink">
         {p.direction === "up" ? (
           <TrendingUp aria-hidden className="size-4 shrink-0 text-success" />
@@ -103,6 +110,12 @@ export function PositionsPanel() {
     return () => clearInterval(t);
   }, []);
 
+  // Keys present on first load — rows that appear later (a fresh mint) flash once.
+  const initialKeys = useRef<Set<string> | null>(null);
+  if (positions && initialKeys.current === null) {
+    initialKeys.current = new Set(positions.map((p) => p.key));
+  }
+
   const expired = [...new Set((positions ?? []).filter((p) => p.expiry <= now).map((p) => p.oracleId))];
   const { data: settlements } = useSettlements(expired);
 
@@ -117,8 +130,10 @@ export function PositionsPanel() {
         Positions
       </span>
       {!managerId || isPending ? (
-        <div className="flex items-center gap-2 px-3 py-4 text-sm text-ink-subtle">
-          <Loader2 aria-hidden className="size-3.5 animate-spin" /> loading positions…
+        <div className="flex flex-col gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-10 animate-pulse rounded-lg bg-surface-2" />
+          ))}
         </div>
       ) : positions && positions.length > 0 ? (
         <div className="lift rounded-xl border border-hairline bg-surface-1 p-1.5">
@@ -134,6 +149,7 @@ export function PositionsPanel() {
           {positions.map((p) => (
             <PositionRow
               key={p.key}
+              isNew={!initialKeys.current?.has(p.key)}
               isRedeeming={redeemingKey === p.key}
               position={p}
               status={positionStatus(p, now, settlements?.[p.oracleId])}

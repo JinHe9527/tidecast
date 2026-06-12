@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { motion } from "motion/react";
 import { NumberField, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { Check, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -95,7 +96,7 @@ function MintAction(p: MintActionProps) {
               <Check aria-hidden className="size-4" /> Minted
             </>
           ) : insufficient ? (
-            "Insufficient dUSDC"
+            "Need more dUSDC"
           ) : (
             `Mint ${p.direction === "up" ? "Up" : "Down"}`
           )}
@@ -175,7 +176,16 @@ export function TicketPanel(p: TicketPanelProps) {
           <span className="text-xs text-danger">{p.error.message}</span>
         ) : p.quote ? (
           <span className="flex items-center gap-1.5 text-sm tabular-nums text-ink">
-            Cost ≈ {fmtDusdc(p.quote.cost)} · payout if right ≈ {fmtDusdc(p.quote.amountRaw)}
+            {/* keyed remount fades the new numbers in; transform-only, no layout shift */}
+            <motion.span
+              key={`${p.quote.cost}|${p.quote.amountRaw}`}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-block"
+              initial={{ opacity: 0.35, y: 2 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              Cost ≈ {fmtDusdc(p.quote.cost)} · payout if right ≈ {fmtDusdc(p.quote.amountRaw)}
+            </motion.span>
             {p.isFetching && (
               <Loader2 aria-hidden className="size-3.5 animate-spin text-ink-subtle" />
             )}

@@ -114,6 +114,19 @@
   box-shadow: var(--lift-2);
 }
 
+/* One-shot accent pulse for a freshly minted position row. */
+@keyframes row-flash {
+  from {
+    background-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+@utility row-flash {
+  animation: row-flash 1.6s var(--ease-out) 1;
+}
+
 /* Transparent so macOS window vibrancy shows through. */
 html,
 body {

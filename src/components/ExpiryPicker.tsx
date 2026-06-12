@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Loader2 } from "lucide-react";
 import type { Oracle } from "@/hooks/useOracles";
 
 /** Single-key from a React Aria Selection. */
@@ -24,10 +25,11 @@ interface ExpiryPickerProps {
   selectedId: string | undefined;
   onSelect: (id: string) => void;
   isPending: boolean;
+  isError: boolean;
 }
 
 /** Rolling hourly expiries — one toggle per live oracle. */
-export function ExpiryPicker({ oracles, selectedId, onSelect, isPending }: ExpiryPickerProps) {
+export function ExpiryPicker({ oracles, selectedId, onSelect, isPending, isError }: ExpiryPickerProps) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
@@ -44,9 +46,16 @@ export function ExpiryPicker({ oracles, selectedId, onSelect, isPending }: Expir
           ))}
         </div>
       ) : oracles.length === 0 ? (
-        <span className="text-sm text-ink-subtle">
-          No live markets — oracles roll sub-hourly, hang tight.
-        </span>
+        isError ? (
+          <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
+            <Loader2 aria-hidden className="size-3.5 animate-spin" />
+            Predict server unreachable — retrying…
+          </span>
+        ) : (
+          <span className="text-sm text-ink-subtle">
+            Markets are rolling over — back in a minute.
+          </span>
+        )
       ) : (
         <ToggleButtonGroup
           aria-label="Expiry"

@@ -1,6 +1,8 @@
 node_modules/
 dist/
 target/
+# Tauri generated permission schemas
+src-tauri/gen/
 .env
 .env.local
 .env.*.local

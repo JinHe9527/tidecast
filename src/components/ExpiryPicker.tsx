@@ -9,7 +9,7 @@ function firstKey(keys: Iterable<string | number>): string | undefined {
 }
 
 /** "in 43 min" when close, local HH:MM today, date + time beyond 24h. */
-function expiryLabel(expiry: number, now: number): string {
+export function expiryLabel(expiry: number, now: number): string {
   const mins = Math.round((expiry - now) / 60_000);
   if (mins <= 0) return "expiring";
   if (mins < 60) return `in ${mins} min`;

@@ -5,6 +5,8 @@ import { PriceHeader } from "@/components/PriceHeader";
 import { ExpiryPicker } from "@/components/ExpiryPicker";
 import { StrikeLadder } from "@/components/StrikeLadder";
 import { TicketPanel } from "@/components/TicketPanel";
+import { VolSmile } from "@/components/VolSmile";
+import { MarketHeat } from "@/components/MarketHeat";
 import { PositionsPanel } from "@/components/PositionsPanel";
 import { useOracles } from "@/hooks/useOracles";
 import { usePrice } from "@/hooks/usePrice";
@@ -79,6 +81,13 @@ export function App() {
               tickSize={oracle?.tick_size}
               onSelect={setPickedStrike}
             />
+            <VolSmile
+              expiry={oracle?.expiry}
+              forward={price?.forward}
+              oracleId={oracle?.oracle_id}
+              strike={strike}
+            />
+            <MarketHeat oracleId={oracle?.oracle_id} />
           </section>
           <aside className="md:sticky md:top-8 md:self-start">
             <TicketPanel

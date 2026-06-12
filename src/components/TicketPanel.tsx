@@ -1,6 +1,10 @@
+import { useRef, useState } from "react";
 import { NumberField, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { Loader2, TrendingDown, TrendingUp } from "lucide-react";
+import { Check, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useDusdc } from "@/hooks/useDusdc";
+import { useManager, useManagerBalance } from "@/hooks/useManager";
+import { useTrade } from "@/hooks/useTrade";
 import type { Direction, Quote } from "@/hooks/useQuote";
 import { fmtDusdc, fmtUsd } from "@/lib/constants";
 
@@ -10,7 +14,103 @@ function firstKey(keys: Iterable<string | number>): string | undefined {
   return k == null ? undefined : String(k);
 }
 
+interface MintActionProps {
+  oracleId: string | undefined;
+  expiry: number | undefined;
+  strike: number | undefined;
+  direction: Direction;
+  quote: Quote | undefined;
+  quoteReady: boolean;
+}
+
+/** Manager bootstrap + balances + the Mint button — the write side of the ticket. */
+function MintAction(p: MintActionProps) {
+  const { managerId, isPending: managerPending, create } = useManager();
+  const { data: walletDusdc } = useDusdc();
+  const { data: managerDusdc } = useManagerBalance(managerId);
+  const { mint } = useTrade();
+  const [justMinted, setJustMinted] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const combined = (walletDusdc ?? 0n) + (managerDusdc ?? 0n);
+  const insufficient = p.quote !== undefined && combined < p.quote.cost;
+  const ready =
+    !!managerId &&
+    !!p.oracleId &&
+    p.expiry !== undefined &&
+    p.strike !== undefined &&
+    p.quote !== undefined &&
+    p.quoteReady &&
+    !insufficient;
+
+  function onMint() {
+    if (!managerId || !p.oracleId || p.expiry === undefined || p.strike === undefined || !p.quote) {
+      return;
+    }
+    mint.mutate(
+      {
+        managerId,
+        managerBalance: managerDusdc ?? 0n,
+        oracleId: p.oracleId,
+        expiry: p.expiry,
+        strike: p.strike,
+        direction: p.direction,
+        amountRaw: BigInt(p.quote.amountRaw),
+        costRaw: p.quote.cost,
+      },
+      {
+        onSuccess: () => {
+          setJustMinted(true);
+          clearTimeout(flashTimer.current);
+          flashTimer.current = setTimeout(() => setJustMinted(false), 2_500);
+        },
+      },
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between text-xs tabular-nums text-ink-subtle">
+        <span>Wallet {walletDusdc !== undefined ? fmtDusdc(walletDusdc) : "—"}</span>
+        <span>Account {managerDusdc !== undefined ? fmtDusdc(managerDusdc) : "—"}</span>
+      </div>
+      {!managerId ? (
+        <Button
+          className="w-full"
+          isDisabled={managerPending}
+          isPending={create.isPending}
+          onPress={() => create.mutate()}
+        >
+          {managerPending ? "Looking up trading account…" : "Create trading account"}
+        </Button>
+      ) : (
+        <Button
+          className="w-full"
+          isDisabled={!ready || justMinted}
+          isPending={mint.isPending}
+          onPress={onMint}
+        >
+          {justMinted ? (
+            <>
+              <Check aria-hidden className="size-4" /> Minted
+            </>
+          ) : insufficient ? (
+            "Insufficient dUSDC"
+          ) : (
+            `Mint ${p.direction === "up" ? "Up" : "Down"}`
+          )}
+        </Button>
+      )}
+      {create.error && <span className="text-xs text-danger">{create.error.message}</span>}
+      {mint.error && !mint.isPending && (
+        <span className="text-xs text-danger">{mint.error.message}</span>
+      )}
+    </div>
+  );
+}
+
 interface TicketPanelProps {
+  oracleId: string | undefined;
   direction: Direction;
   onDirection: (d: Direction) => void;
   amount: number; // dUSDC display units
@@ -22,7 +122,7 @@ interface TicketPanelProps {
   error: Error | null;
 }
 
-/** Order ticket — direction, amount, live devInspect quote. Mint lands D3. */
+/** Order ticket — direction, amount, live devInspect quote, one-click mint. */
 export function TicketPanel(p: TicketPanelProps) {
   const summary =
     p.strike !== undefined && p.expiry !== undefined
@@ -87,9 +187,14 @@ export function TicketPanel(p: TicketPanelProps) {
         ) : null}
       </div>
 
-      <Button isDisabled className="w-full">
-        Mint (lands D3)
-      </Button>
+      <MintAction
+        direction={p.direction}
+        expiry={p.expiry}
+        oracleId={p.oracleId}
+        quote={p.quote}
+        quoteReady={!p.isFetching && !p.error}
+        strike={p.strike}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { PriceHeader } from "@/components/PriceHeader";
 import { ExpiryPicker } from "@/components/ExpiryPicker";
 import { StrikeLadder } from "@/components/StrikeLadder";
 import { TicketPanel } from "@/components/TicketPanel";
+import { PositionsPanel } from "@/components/PositionsPanel";
 import { useOracles } from "@/hooks/useOracles";
 import { usePrice } from "@/hooks/usePrice";
 import { useDebounced, useQuote, type Direction } from "@/hooks/useQuote";
@@ -86,12 +87,16 @@ export function App() {
               error={quote.error}
               expiry={oracle?.expiry}
               isFetching={quote.isFetching || amount !== debouncedAmount}
+              oracleId={oracle?.oracle_id}
               quote={quote.data}
               strike={strike}
               onAmount={setAmount}
               onDirection={setDirection}
             />
           </aside>
+        </div>
+        <div className="mx-auto w-full max-w-4xl px-6 pb-10">
+          <PositionsPanel />
         </div>
       </main>
     </div>

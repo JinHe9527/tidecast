@@ -23,7 +23,7 @@ interface QuoteParams {
   amountRaw: number; // 6-dec dUSDC raw
 }
 
-async function fetchQuote(
+export async function fetchQuote(
   sender: string,
   p: { oracleId: string; expiry: number; strike: number; direction: Direction; amountRaw: number },
 ): Promise<Quote> {

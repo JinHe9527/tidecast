@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"
+      integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      :root {
+        --canvas: #070e18;
+        --surface-1: #0c1828;
+        --surface-2: #102036;
+        --hairline: #1b2c42;
+        --hairline-strong: #27405e;
+        --ink: #f2f7fb;
+        --ink-muted: #b9c8d8;
+        --ink-subtle: #8298ad;
+        --accent: #22d3ee;
+        --accent-soft: #67e8f9;
+        --success: #4ade80;
+        --danger: #f87171;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--canvas);
+      }
+      body {
+        font-family: system-ui, sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+      .mono {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      }
+
+      /* ---- scene scaffolding: wrappers are NON-timed, GSAP owns opacity ---- */
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        background: var(--canvas);
+        opacity: 0;
+      }
+
+      /* ---- decorative layers ---------------------------------------------- */
+      .glow {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(130px);
+        opacity: 0.4;
+        background: var(--accent);
+        pointer-events: none;
+      }
+      .grid-bg {
+        position: absolute;
+        inset: -120px;
+        background-image: linear-gradient(var(--hairline) 1px, transparent 1px),
+          linear-gradient(90deg, var(--hairline) 1px, transparent 1px);
+        background-size: 96px 96px;
+        opacity: 0.32;
+        pointer-events: none;
+      }
+      .ghost {
+        position: absolute;
+        font-weight: 800;
+        letter-spacing: -6px;
+        color: #ffffff;
+        opacity: 0.05;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      /* ---- text-scene chrome ----------------------------------------------- */
+      .wrap {
+        position: absolute;
+        left: 160px;
+        top: 170px;
+        width: 1600px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 24px;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: var(--accent-soft);
+        font-weight: 600;
+      }
+      .kicker .bar {
+        width: 56px;
+        height: 3px;
+        background-color: var(--accent);
+      }
+      .headline {
+        font-size: 98px;
+        font-weight: 750;
+        letter-spacing: -3.5px;
+        line-height: 1.04;
+        margin-top: 30px;
+        max-width: 1560px;
+      }
+      .headline .hi {
+        color: var(--accent);
+      }
+      .headline .mut {
+        color: var(--ink-subtle);
+      }
+      .sub {
+        font-size: 44px;
+        font-weight: 400;
+        letter-spacing: -0.8px;
+        color: var(--ink-muted);
+        margin-top: 30px;
+        max-width: 1460px;
+        line-height: 1.35;
+      }
+      .rule {
+        height: 3px;
+        background-color: var(--accent);
+        transform-origin: left center;
+        margin-top: 36px;
+        width: 360px;
+      }
+      .pills {
+        position: absolute;
+        left: 160px;
+        bottom: 200px;
+        display: flex;
+        gap: 20px;
+      }
+      .pill {
+        padding: 18px 30px;
+        border: 2px solid var(--hairline-strong);
+        border-radius: 12px;
+        background: var(--surface-1);
+        font-size: 29px;
+        font-weight: 500;
+        color: var(--ink-muted);
+        white-space: nowrap;
+      }
+      .pill .x {
+        color: var(--danger);
+        margin-right: 12px;
+        font-weight: 700;
+      }
+      .pill .ck {
+        color: var(--success);
+        margin-right: 12px;
+        font-weight: 700;
+      }
+      .answer {
+        position: absolute;
+        left: 160px;
+        bottom: 200px;
+        font-size: 46px;
+        font-weight: 400;
+        letter-spacing: -0.6px;
+        color: var(--ink-muted);
+        line-height: 1.35;
+        max-width: 1600px;
+      }
+      .answer .hi {
+        color: var(--accent);
+        font-weight: 650;
+      }
+      .badge {
+        position: absolute;
+        left: 160px;
+        bottom: 120px;
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 26px;
+        border: 2px solid var(--hairline-strong);
+        border-radius: 12px;
+        background: var(--surface-1);
+        font-size: 24px;
+        color: var(--ink-muted);
+        font-weight: 500;
+      }
+      .badge .pip {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background-color: var(--accent);
+      }
+
+      /* ---- title / outro card ---------------------------------------------- */
+      .hero {
+        position: absolute;
+        left: 160px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1600px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .waves {
+        width: 120px;
+        height: 120px;
+        stroke: var(--accent);
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .waves path {
+        stroke-dasharray: 30;
+        stroke-dashoffset: 0;
+      }
+      .wordmark {
+        font-size: 184px;
+        font-weight: 800;
+        letter-spacing: -8px;
+        line-height: 1;
+        margin-top: 26px;
+      }
+      .wordmark .cast {
+        color: var(--accent);
+      }
+      .tagline {
+        font-size: 47px;
+        font-weight: 400;
+        letter-spacing: -1px;
+        color: var(--ink-muted);
+        margin-top: 28px;
+      }
+
+      /* ---- demo beats -------------------------------------------------------- */
+      .shotpanel {
+        position: absolute;
+        left: 180px;
+        top: 36px;
+        width: 1560px;
+        height: 975px;
+        border: 2px solid var(--hairline-strong);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #0a1422;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+        z-index: 4;
+      }
+      .shotpanel img {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .zoomwrap {
+        position: absolute;
+        inset: 0;
+      }
+      .cap-card {
+        position: absolute;
+        left: 64px;
+        bottom: 56px;
+        z-index: 9;
+        display: inline-flex;
+        align-items: center;
+        gap: 18px;
+        padding: 18px 28px 18px 24px;
+        background: rgba(10, 20, 34, 0.93);
+        border: 2px solid var(--hairline-strong);
+        border-radius: 12px;
+        max-width: 1500px;
+      }
+      .cap-card .num {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--accent-soft);
+        font-variant-numeric: tabular-nums;
+      }
+      .cap-card .div {
+        width: 2px;
+        height: 28px;
+        background: var(--hairline-strong);
+      }
+      .cap-card .txt {
+        font-size: 30px;
+        font-weight: 550;
+        letter-spacing: -0.4px;
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      .digest-card {
+        position: absolute;
+        left: 64px;
+        bottom: 56px;
+        z-index: 9;
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        padding: 13px 22px;
+        background: rgba(10, 20, 34, 0.93);
+        border: 2px solid var(--hairline);
+        border-radius: 10px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 18px;
+        color: var(--ink-subtle);
+      }
+      .digest-card .lbl {
+        color: var(--success);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+      }
+      .scene-tag {
+        position: absolute;
+        right: 64px;
+        top: 44px;
+        z-index: 9;
+        padding: 12px 20px;
+        border: 2px solid var(--hairline-strong);
+        border-radius: 10px;
+        background: rgba(10, 20, 34, 0.9);
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 20px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--ink-subtle);
+      }
+      .mint-ring {
+        position: absolute;
+        left: 940px;
+        top: 418px;
+        width: 348px;
+        height: 68px;
+        z-index: 6;
+        pointer-events: none;
+      }
+      .ring-core {
+        position: absolute;
+        inset: 0;
+        border: 3px solid var(--accent);
+        border-radius: 999px;
+        box-shadow:
+          0 0 26px rgba(34, 211, 238, 0.65),
+          inset 0 0 18px rgba(34, 211, 238, 0.25);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="235"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- ============================================================
+           Scene wrappers are NON-timed; GSAP drives opacity crossfades.
+           Screenshot <img> elements are TIMED clips on alternating
+           tracks (2/3) whose windows overlap the 0.7s crossfades.
+           ============================================================ -->
+
+      <!-- S1a · PROBLEM 1 (0–16) -->
+      <div id="p1" class="scene">
+        <div class="grid-bg" id="p1-grid" data-layout-ignore></div>
+        <div class="glow" id="p1-glow" data-layout-ignore style="width: 720px; height: 720px; right: -140px; top: -120px;"></div>
+        <div class="ghost" id="p1-ghost" data-layout-ignore style="right: -50px; bottom: 50px; font-size: 290px;">SVI</div>
+        <div class="wrap">
+          <div class="kicker" id="p1-kicker"><span class="bar"></span>Sui Overflow 2026 · DeepBook track</div>
+          <h1 class="headline" id="p1-head"><span class="hi">DeepBook Predict</span> just launched.</h1>
+          <div class="rule" id="p1-rule"></div>
+          <div class="sub" id="p1-sub">On-chain BTC options — priced by a live SVI volatility surface.</div>
+        </div>
+        <div class="pills">
+          <div class="pill mono" id="p1-pill1">binary up / down</div>
+          <div class="pill mono" id="p1-pill2">range positions</div>
+          <div class="pill mono" id="p1-pill3">rolling hourly expiries</div>
+        </div>
+      </div>
+
+      <!-- S1b · PROBLEM 2 (16–35) -->
+      <div id="p2" class="scene">
+        <div class="grid-bg" id="p2-grid" data-layout-ignore></div>
+        <div class="glow" id="p2-glow" data-layout-ignore style="width: 640px; height: 640px; left: -160px; top: 420px; opacity: 0.32;"></div>
+        <div class="ghost" id="p2-ghost" data-layout-ignore style="left: -40px; top: 30px; font-size: 230px;">DEEPBOOK</div>
+        <div class="wrap">
+          <div class="kicker" id="p2-kicker"><span class="bar"></span>The problem</div>
+          <h1 class="headline" id="p2-head1" style="font-size: 92px;">But there&rsquo;s no interface.</h1>
+          <h1 class="headline mut" id="p2-head2" style="font-size: 92px; margin-top: 10px; color: var(--ink-subtle);">No trading desk.</h1>
+        </div>
+        <div class="pills" style="bottom: 320px;">
+          <div class="pill" id="p2-pill1"><span class="x">×</span>raw Move calls only</div>
+          <div class="pill" id="p2-pill2"><span class="x">×</span>no live quotes</div>
+          <div class="pill" id="p2-pill3"><span class="x">×</span>no positions view</div>
+        </div>
+        <div class="answer" id="p2-answer" style="bottom: 170px;">
+          Judges, traders, anyone — <span class="hi">locked out.</span>
+        </div>
+      </div>
+
+      <!-- S2 · MEET TIDECAST (35–45) -->
+      <div id="title" class="scene">
+        <div class="grid-bg" id="t-grid" data-layout-ignore></div>
+        <div class="glow" id="t-glow" data-layout-ignore style="width: 820px; height: 820px; left: 1020px; top: -180px;"></div>
+        <div class="ghost" id="t-ghost" data-layout-ignore style="right: -30px; bottom: 40px; font-size: 300px;">TIDE</div>
+        <div class="hero" id="t-zoom">
+          <svg class="waves" id="t-waves" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path id="t-w1" d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+            <path id="t-w2" d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+            <path id="t-w3" d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+          </svg>
+          <h1 class="wordmark"><span id="t-tide">Tide</span><span class="cast" id="t-cast">cast</span></h1>
+          <div class="tagline" id="t-tag">The trading desk for DeepBook Predict.</div>
+        </div>
+        <div class="badge" id="t-badge"><span class="pip"></span>Sui Overflow 2026 · DeepBook track</div>
+      </div>
+
+      <!-- S3 · B1 OVERVIEW (45–70) -->
+      <div id="b1" class="scene">
+        <div class="grid-bg" id="b1-grid" data-layout-ignore></div>
+        <div class="glow" id="b1-glow" data-layout-ignore style="width: 560px; height: 560px; left: -180px; top: -160px; opacity: 0.3;"></div>
+        <div class="shotpanel" id="b1-panel">
+          <img id="i-b1" class="clip" data-layout-allow-overflow src="public/app-overview.png" alt="" data-start="44.8" data-duration="26.1" data-track-index="2" style="transform-origin: 50% 38%;" />
+        </div>
+        <div class="scene-tag" id="b1-tag">live testnet data</div>
+        <div class="cap-card" id="b1-cap"><span class="num">01</span><span class="div"></span><span class="txt">Live BTC oracle price · rolling expiries · a strike ladder around spot</span></div>
+      </div>
+
+      <!-- S3 · B2 QUOTE (70–92) -->
+      <div id="b2" class="scene">
+        <div class="grid-bg" id="b2-grid" data-layout-ignore></div>
+        <div class="glow" id="b2-glow" data-layout-ignore style="width: 560px; height: 560px; right: -180px; top: -160px; opacity: 0.3;"></div>
+        <div class="shotpanel" id="b2-panel">
+          <img id="i-b2" class="clip" data-layout-allow-overflow src="public/quote-live.png" alt="" data-start="69.8" data-duration="23.1" data-track-index="3" style="transform-origin: 71.4% 30.4%;" />
+        </div>
+        <div class="scene-tag" id="b2-tag">free quote · devinspect</div>
+        <div class="cap-card" id="b2-cap"><span class="num">02</span><span class="div"></span><span class="txt">Type an amount — the SVI engine quotes you live, for free, via devInspect</span></div>
+      </div>
+
+      <!-- S3 · B3 MINT (92–114) — same shot, pulled wide with the button ringed -->
+      <div id="b3" class="scene">
+        <div class="grid-bg" id="b3-grid" data-layout-ignore></div>
+        <div class="glow" id="b3-glow" data-layout-ignore style="width: 560px; height: 560px; right: -160px; bottom: -180px; opacity: 0.3;"></div>
+        <div class="shotpanel" id="b3-panel">
+          <div class="zoomwrap" id="b3-zoom" data-layout-allow-overflow style="transform-origin: 71.4% 46.4%;">
+            <img id="i-b3" class="clip" data-layout-allow-overflow src="public/quote-live.png" alt="" data-start="91.8" data-duration="23.1" data-track-index="2" />
+            <div class="mint-ring" id="b3-ring"><div class="ring-core" id="b3-ringcore"></div></div>
+          </div>
+        </div>
+        <div class="scene-tag" id="b3-tag">in-process signing</div>
+        <div class="cap-card" id="b3-cap"><span class="num">03</span><span class="div"></span><span class="txt">One click. Signed in-process by a local keypair. No extension, no popup.</span></div>
+      </div>
+
+      <!-- S3 · B4 POSITIONS (114–139) -->
+      <div id="b4" class="scene">
+        <div class="grid-bg" id="b4-grid" data-layout-ignore></div>
+        <div class="glow" id="b4-glow" data-layout-ignore style="width: 560px; height: 560px; left: -180px; bottom: -160px; opacity: 0.3;"></div>
+        <div class="shotpanel" id="b4-panel">
+          <img id="i-b4" class="clip" data-layout-allow-overflow src="public/positions.png" alt="" data-start="113.8" data-duration="26.1" data-track-index="3" style="transform-origin: 50% 88%;" />
+        </div>
+        <div class="scene-tag" id="b4-tag">real testnet transaction</div>
+        <div class="cap-card" id="b4-cap" style="bottom: 132px;"><span class="num">04</span><span class="div"></span><span class="txt">Your position appears with live estimated PnL</span></div>
+        <div class="digest-card" id="b4-digest"><span class="lbl">tx</span>8wDTPzWhoq9YKVT95nVKJnBjqmMkPF1UNKCxvgiZmUif</div>
+      </div>
+
+      <!-- S3 · B5 SMILE (139–161) -->
+      <div id="b5" class="scene">
+        <div class="grid-bg" id="b5-grid" data-layout-ignore></div>
+        <div class="glow" id="b5-glow" data-layout-ignore style="width: 560px; height: 560px; right: -180px; top: 240px; opacity: 0.3;"></div>
+        <div class="shotpanel" id="b5-panel">
+          <img id="i-b5" class="clip" data-layout-allow-overflow src="public/smile.png" alt="" data-start="138.8" data-duration="23.1" data-track-index="2" style="transform-origin: 37% 60%;" />
+        </div>
+        <div class="scene-tag" id="b5-tag">svi surface · live</div>
+        <div class="cap-card" id="b5-cap"><span class="num">05</span><span class="div"></span><span class="txt">Watch the implied-volatility smile breathe as the oracle ticks</span></div>
+      </div>
+
+      <!-- S3 · B6 HEATMAP (161–183) -->
+      <div id="b6" class="scene">
+        <div class="grid-bg" id="b6-grid" data-layout-ignore></div>
+        <div class="glow" id="b6-glow" data-layout-ignore style="width: 560px; height: 560px; left: -180px; top: 240px; opacity: 0.3;"></div>
+        <div class="shotpanel" id="b6-panel">
+          <img id="i-b6" class="clip" data-layout-allow-overflow src="public/heatmap.png" alt="" data-start="160.8" data-duration="23.1" data-track-index="3" style="transform-origin: 37% 75%;" />
+        </div>
+        <div class="scene-tag" id="b6-tag">market positioning</div>
+        <div class="cap-card" id="b6-cap"><span class="num">06</span><span class="div"></span><span class="txt">See where the whole market is positioned</span></div>
+      </div>
+
+      <!-- S3 · B7 ONBOARDING (183–205) -->
+      <div id="b7" class="scene">
+        <div class="grid-bg" id="b7-grid" data-layout-ignore></div>
+        <div class="glow" id="b7-glow" data-layout-ignore style="width: 560px; height: 560px; right: -160px; top: -160px; opacity: 0.3;"></div>
+        <div class="shotpanel" id="b7-panel">
+          <img id="i-b7" class="clip" data-layout-allow-overflow src="public/onboarding.png" alt="" data-start="182.8" data-duration="23.1" data-track-index="2" style="transform-origin: 50% 55%;" />
+        </div>
+        <div class="scene-tag" id="b7-tag">first run</div>
+        <div class="cap-card" id="b7-cap"><span class="num">07</span><span class="div"></span><span class="txt">New here? Generate a wallet, grab free gas — guided the whole way</span></div>
+      </div>
+
+      <!-- S4a · VISION (205–220) -->
+      <div id="vision" class="scene">
+        <div class="grid-bg" id="v-grid" data-layout-ignore></div>
+        <div class="glow" id="v-glow" data-layout-ignore style="width: 680px; height: 680px; right: -140px; top: 360px; opacity: 0.34;"></div>
+        <div class="ghost" id="v-ghost" data-layout-ignore style="left: -30px; bottom: 40px; font-size: 270px;">NEXT</div>
+        <div class="wrap">
+          <div class="kicker" id="v-kicker"><span class="bar"></span>Where it goes next</div>
+          <h1 class="headline" id="v-head" style="font-size: 86px;">The desk grows<br />with the protocol.</h1>
+        </div>
+        <div class="pills" style="bottom: 240px;">
+          <div class="pill" id="v-pill1"><span class="ck">→</span>Range positions</div>
+          <div class="pill" id="v-pill2"><span class="ck">→</span>PLP liquidity vault</div>
+          <div class="pill" id="v-pill3"><span class="ck">→</span>Copy-trading</div>
+        </div>
+      </div>
+
+      <!-- S4b · OUTRO (220–235) -->
+      <div id="outro" class="scene">
+        <div class="grid-bg" id="o-grid" data-layout-ignore></div>
+        <div class="glow" id="o-glow" data-layout-ignore style="width: 840px; height: 840px; left: 960px; top: 240px; opacity: 0.36;"></div>
+        <div class="hero" style="top: 47%;">
+          <svg class="waves" id="o-waves" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width: 104px; height: 104px;">
+            <path id="o-w1" d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+            <path id="o-w2" d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+            <path id="o-w3" d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+          </svg>
+          <h1 class="wordmark" style="font-size: 150px;"><span id="o-tide">Tide</span><span class="cast" id="o-cast">cast</span></h1>
+          <div class="tagline" id="o-tag">Read the tide.</div>
+          <div class="mono" id="o-repo" style="margin-top: 34px; font-size: 30px; color: var(--ink-muted); letter-spacing: -0.3px;">github.com/JinHe9527/tidecast</div>
+        </div>
+        <div class="badge" id="o-badge"><span class="pip"></span>Sui Overflow 2026 · DeepBook track</div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      /* ----- scene crossfades (the ONLY exits; no per-element outs) -----
+         Literal selectors keep the lint's static analysis exact. Each pair
+         fades the next scene in while the previous fades out (0.7s). */
+      const XFI = { opacity: 1, duration: 0.7, ease: "power2.inOut" };
+      const XFO = { opacity: 0, duration: 0.7, ease: "power2.inOut" };
+      tl.set("#p1", { opacity: 1 }, 0);
+      tl.fromTo("#p2", { opacity: 0 }, XFI, 16.0);      tl.to("#p1", XFO, 16.0);
+      tl.fromTo("#title", { opacity: 0 }, XFI, 35.0);   tl.to("#p2", XFO, 35.0);
+      tl.fromTo("#b1", { opacity: 0 }, XFI, 45.0);      tl.to("#title", XFO, 45.0);
+      tl.fromTo("#b2", { opacity: 0 }, XFI, 70.0);      tl.to("#b1", XFO, 70.0);
+      tl.fromTo("#b3", { opacity: 0 }, XFI, 92.0);      tl.to("#b2", XFO, 92.0);
+      tl.fromTo("#b4", { opacity: 0 }, XFI, 114.0);     tl.to("#b3", XFO, 114.0);
+      tl.fromTo("#b5", { opacity: 0 }, XFI, 139.0);     tl.to("#b4", XFO, 139.0);
+      tl.fromTo("#b6", { opacity: 0 }, XFI, 161.0);     tl.to("#b5", XFO, 161.0);
+      tl.fromTo("#b7", { opacity: 0 }, XFI, 183.0);     tl.to("#b6", XFO, 183.0);
+      tl.fromTo("#vision", { opacity: 0 }, XFI, 205.0); tl.to("#b7", XFO, 205.0);
+      tl.fromTo("#outro", { opacity: 0 }, XFI, 220.0);  tl.to("#vision", XFO, 220.0);
+      // final fade to black (only allowed exit)
+      tl.to("#outro", XFO, 233.6);
+
+      /* ----- S1a entrances (restrained ease-out typography) ----- */
+      tl.from("#p1-kicker", { x: -44, opacity: 0, duration: 0.6, ease: "power3.out" }, 0.4);
+      tl.from("#p1-head", { y: 56, opacity: 0, duration: 0.85, ease: "power4.out" }, 0.7);
+      tl.fromTo("#p1-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "expo.out" }, 1.5);
+      tl.from("#p1-sub", { y: 36, opacity: 0, duration: 0.7, ease: "power2.out" }, 1.7);
+      tl.from("#p1-pill1", { y: 28, opacity: 0, duration: 0.55, ease: "power2.out" }, 2.7);
+      tl.from("#p1-pill2", { y: 28, opacity: 0, duration: 0.55, ease: "power2.out" }, 2.85);
+      tl.from("#p1-pill3", { y: 28, opacity: 0, duration: 0.55, ease: "power2.out" }, 3.0);
+      tl.from("#p1-ghost", { x: 70, opacity: 0, duration: 1.3, ease: "power2.out" }, 0.4);
+      tl.to("#p1-glow", { scale: 1.18, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 3 }, 0.2);
+      tl.to("#p1-grid", { x: -44, duration: 16, ease: "none" }, 0);
+
+      /* ----- S1b entrances ----- */
+      tl.from("#p2-kicker", { x: -44, opacity: 0, duration: 0.6, ease: "power3.out" }, 16.6);
+      tl.from("#p2-head1", { y: 48, opacity: 0, duration: 0.8, ease: "power4.out" }, 16.8);
+      tl.from("#p2-head2", { y: 48, opacity: 0, duration: 0.8, ease: "power4.out" }, 17.5);
+      tl.from("#p2-pill1", { x: -36, opacity: 0, duration: 0.55, ease: "power2.out" }, 18.6);
+      tl.from("#p2-pill2", { x: -36, opacity: 0, duration: 0.55, ease: "power2.out" }, 18.78);
+      tl.from("#p2-pill3", { x: -36, opacity: 0, duration: 0.55, ease: "power2.out" }, 18.96);
+      tl.from("#p2-answer", { y: 38, opacity: 0, duration: 0.9, ease: "expo.out" }, 20.6);
+      tl.from("#p2-ghost", { x: -70, opacity: 0, duration: 1.3, ease: "power2.out" }, 16.5);
+      tl.to("#p2-glow", { scale: 1.2, duration: 3.4, ease: "sine.inOut", yoyo: true, repeat: 4 }, 16.2);
+      tl.to("#p2-grid", { x: 44, duration: 19, ease: "none" }, 16);
+
+      /* ----- S2 title entrances ----- */
+      tl.fromTo("#t-zoom", { scale: 0.96 }, { scale: 1, duration: 1.2, ease: "power2.out" }, 35.1);
+      tl.fromTo("#t-w1", { strokeDashoffset: 30 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 35.4);
+      tl.fromTo("#t-w2", { strokeDashoffset: 30 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 35.6);
+      tl.fromTo("#t-w3", { strokeDashoffset: 30 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 35.8);
+      tl.from("#t-tide", { y: 80, opacity: 0, duration: 0.85, ease: "power4.out" }, 35.7);
+      tl.from("#t-cast", { y: 80, opacity: 0, duration: 0.85, ease: "power4.out" }, 35.85);
+      tl.from("#t-tag", { y: 32, opacity: 0, duration: 0.7, ease: "power2.out" }, 36.4);
+      tl.from("#t-badge", { y: 26, opacity: 0, duration: 0.6, ease: "power3.out" }, 36.9);
+      tl.from("#t-ghost", { x: 70, opacity: 0, duration: 1.3, ease: "power2.out" }, 35.3);
+      tl.to("#t-glow", { scale: 1.16, duration: 3.0, ease: "sine.inOut", yoyo: true, repeat: 1 }, 35.4);
+      tl.to("#t-grid", { x: -36, y: -18, duration: 10, ease: "none" }, 35);
+
+      /* ----- demo beats: entrance choreography (literal selectors keep the
+             lint's static tween-overlap analysis exact) ----- */
+      tl.fromTo("#b1-panel", { y: 16, scale: 0.985 }, { y: 0, scale: 1, duration: 0.9, ease: "power2.out" }, 45.1);
+      tl.from("#b1-cap", { x: -48, opacity: 0, duration: 0.55, ease: "power3.out" }, 45.7);
+      tl.from("#b1-tag", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" }, 45.95);
+      tl.fromTo("#b2-panel", { y: 16, scale: 0.985 }, { y: 0, scale: 1, duration: 0.9, ease: "power2.out" }, 70.1);
+      tl.from("#b2-cap", { x: -48, opacity: 0, duration: 0.55, ease: "power3.out" }, 70.7);
+      tl.from("#b2-tag", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" }, 70.95);
+      tl.fromTo("#b3-panel", { y: 16, scale: 0.985 }, { y: 0, scale: 1, duration: 0.9, ease: "power2.out" }, 92.1);
+      tl.from("#b3-cap", { x: -48, opacity: 0, duration: 0.55, ease: "power3.out" }, 92.7);
+      tl.from("#b3-tag", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" }, 92.95);
+      tl.fromTo("#b4-panel", { y: 16, scale: 0.985 }, { y: 0, scale: 1, duration: 0.9, ease: "power2.out" }, 114.1);
+      tl.from("#b4-cap", { x: -48, opacity: 0, duration: 0.55, ease: "power3.out" }, 114.7);
+      tl.from("#b4-tag", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" }, 114.95);
+      tl.fromTo("#b5-panel", { y: 16, scale: 0.985 }, { y: 0, scale: 1, duration: 0.9, ease: "power2.out" }, 139.1);
+      tl.from("#b5-cap", { x: -48, opacity: 0, duration: 0.55, ease: "power3.out" }, 139.7);
+      tl.from("#b5-tag", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" }, 139.95);
+      tl.fromTo("#b6-panel", { y: 16, scale: 0.985 }, { y: 0, scale: 1, duration: 0.9, ease: "power2.out" }, 161.1);
+      tl.from("#b6-cap", { x: -48, opacity: 0, duration: 0.55, ease: "power3.out" }, 161.7);
+      tl.from("#b6-tag", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" }, 161.95);
+      tl.fromTo("#b7-panel", { y: 16, scale: 0.985 }, { y: 0, scale: 1, duration: 0.9, ease: "power2.out" }, 183.1);
+      tl.from("#b7-cap", { x: -48, opacity: 0, duration: 0.55, ease: "power3.out" }, 183.7);
+      tl.from("#b7-tag", { y: -20, opacity: 0, duration: 0.5, ease: "power2.out" }, 183.95);
+
+      /* grid drift per beat (alternating direction) */
+      tl.to("#b1-grid", { x: -36, duration: 25, ease: "none" }, 45);
+      tl.to("#b2-grid", { x: 36, duration: 22, ease: "none" }, 70);
+      tl.to("#b3-grid", { x: -36, duration: 22, ease: "none" }, 92);
+      tl.to("#b4-grid", { x: 36, duration: 25, ease: "none" }, 114);
+      tl.to("#b5-grid", { x: -36, duration: 22, ease: "none" }, 139);
+      tl.to("#b6-grid", { x: 36, duration: 22, ease: "none" }, 161);
+      tl.to("#b7-grid", { x: -36, duration: 22, ease: "none" }, 183);
+
+      /* Ken Burns — exactly ONE transform tween per element */
+      tl.fromTo("#i-b1", { scale: 1.0 }, { scale: 1.05, duration: 26, ease: "none" }, 44.8);
+      tl.fromTo("#i-b2", { scale: 1.04 }, { scale: 1.46, duration: 22.5, ease: "sine.inOut" }, 69.9);
+      tl.fromTo("#b3-zoom", { scale: 1.34 }, { scale: 1.2, duration: 10, ease: "sine.inOut" }, 92.0);
+      tl.fromTo("#i-b4", { scale: 1.06 }, { scale: 1.2, duration: 26, ease: "none" }, 113.8);
+      tl.fromTo("#i-b5", { scale: 1.02 }, { scale: 1.38, duration: 22.5, ease: "sine.inOut" }, 138.9);
+      tl.fromTo("#i-b6", { scale: 1.06 }, { scale: 1.4, duration: 22.5, ease: "sine.inOut" }, 160.9);
+      tl.fromTo("#i-b7", { scale: 1.0 }, { scale: 1.08, duration: 23, ease: "none" }, 182.8);
+
+      /* B3 mint highlight: ring fades in, core pulses (separate elements) */
+      tl.from("#b3-ring", { opacity: 0, duration: 0.6, ease: "power2.out" }, 93.2);
+      tl.to("#b3-ringcore", { scale: 1.07, duration: 1.1, ease: "sine.inOut", yoyo: true, repeat: 17 }, 93.8);
+
+      /* B4 digest card */
+      tl.from("#b4-digest", { y: 22, opacity: 0, duration: 0.55, ease: "power2.out" }, 115.4);
+
+      /* ----- S4a vision entrances ----- */
+      tl.from("#v-kicker", { x: -44, opacity: 0, duration: 0.6, ease: "power3.out" }, 205.6);
+      tl.from("#v-head", { y: 46, opacity: 0, duration: 0.8, ease: "power4.out" }, 205.8);
+      tl.from("#v-pill1", { y: 30, opacity: 0, duration: 0.55, ease: "power2.out" }, 207.2);
+      tl.from("#v-pill2", { y: 30, opacity: 0, duration: 0.55, ease: "power2.out" }, 207.4);
+      tl.from("#v-pill3", { y: 30, opacity: 0, duration: 0.55, ease: "power2.out" }, 207.6);
+      tl.from("#v-ghost", { x: -70, opacity: 0, duration: 1.3, ease: "power2.out" }, 205.5);
+      tl.to("#v-glow", { scale: 1.18, duration: 3.4, ease: "sine.inOut", yoyo: true, repeat: 3 }, 205.4);
+      tl.to("#v-grid", { x: 36, duration: 15, ease: "none" }, 205);
+
+      /* ----- S4b outro entrances ----- */
+      tl.fromTo("#o-w1", { strokeDashoffset: 30 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 220.4);
+      tl.fromTo("#o-w2", { strokeDashoffset: 30 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 220.6);
+      tl.fromTo("#o-w3", { strokeDashoffset: 30 }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 220.8);
+      tl.from("#o-tide", { y: 64, opacity: 0, duration: 0.85, ease: "power4.out" }, 220.7);
+      tl.from("#o-cast", { y: 64, opacity: 0, duration: 0.85, ease: "power4.out" }, 220.85);
+      tl.from("#o-tag", { y: 30, opacity: 0, duration: 0.7, ease: "power2.out" }, 221.4);
+      tl.from("#o-repo", { opacity: 0, duration: 0.8, ease: "power2.out" }, 221.9);
+      tl.from("#o-badge", { y: 26, opacity: 0, duration: 0.6, ease: "power3.out" }, 222.3);
+      tl.to("#o-glow", { scale: 1.15, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: 3 }, 220.4);
+      tl.to("#o-grid", { x: -36, duration: 15, ease: "none" }, 220);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

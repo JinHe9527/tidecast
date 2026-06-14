@@ -23,6 +23,11 @@ interface QuoteParams {
   amountRaw: number; // 6-dec dUSDC raw
 }
 
+/** devInspect returns each u64 as a little-endian byte array; decode to a bigint. */
+export function decodeU64(bytes: number[] | Uint8Array): bigint {
+  return BigInt(bcs.u64().parse(Uint8Array.from(bytes)));
+}
+
 export async function fetchQuote(
   sender: string,
   p: { oracleId: string; expiry: number; strike: number; direction: Direction; amountRaw: number },
@@ -50,7 +55,7 @@ export async function fetchQuote(
   if (res.error) throw new Error(`quote failed: ${res.error}`);
   const ret = res.results?.at(-1)?.returnValues;
   if (!ret || ret.length < 2) throw new Error("quote failed: no return values");
-  const [cost, alt] = ret.map(([bytes]) => BigInt(bcs.u64().parse(Uint8Array.from(bytes))));
+  const [cost, alt] = ret.map(([bytes]) => decodeU64(bytes));
   return { cost, alt, amountRaw: p.amountRaw };
 }
 

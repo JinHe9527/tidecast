@@ -19,6 +19,7 @@ import { useMarketPositions } from "@/hooks/useMarketPositions";
 import { useDebounced, useQuote, type Direction } from "@/hooks/useQuote";
 import { useWallet } from "@/stores/walletStore";
 import { DUSDC } from "@/lib/constants";
+import { floorToTick, strikeGrid } from "@/lib/strikes";
 
 const SPAN = 4; // ticks above/below ATM → up to 9 strikes, the shared instrument domain
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
@@ -47,17 +48,12 @@ export function App() {
   const market = useMarketPositions(oracle?.oracle_id);
 
   // Spot floored to the strike grid — ladder center and default selection.
-  const atm = price && oracle ? Math.floor(price.spot / oracle.tick_size) * oracle.tick_size : undefined;
+  const atm = price && oracle ? floorToTick(price.spot, oracle.tick_size) : undefined;
   const strike = pickedStrike ?? atm;
 
   // The shared strike domain: ladder rows (high→low) AND the smile/heat X-axis.
-  const strikes: number[] = [];
-  if (atm !== undefined && oracle) {
-    for (let i = SPAN; i >= -SPAN; i--) {
-      const s = atm + i * oracle.tick_size;
-      if (s >= oracle.min_strike) strikes.push(s);
-    }
-  }
+  const strikes: number[] =
+    atm !== undefined && oracle ? strikeGrid(atm, oracle.tick_size, SPAN, oracle.min_strike) : [];
   const strikeHi = strikes[0];
   const strikeLo = strikes.at(-1);
   const T = oracle ? (oracle.expiry - Date.now()) / YEAR_MS : 0;

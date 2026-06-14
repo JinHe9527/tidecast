@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root {
+    --bg0: #070e18; --bg1: #0b1626; --bg2: #10263f;
+    --line0: #164e63; --line1: #0e7490; --line2: #22d3ee;
+    --crest: #e0f7ff; --fore: #67e8f9;
+    --ink: #f7f8f8; --ink-sub: #8a8f98; --ink-dim: #62666d;
+    --accent: #22d3ee;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body {
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+    background: radial-gradient(120% 100% at 70% 20%, #10263f 0%, #0b1626 42%, #070e18 100%);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .card { display: none; position: absolute; inset: 0; }
+  .card.show { display: flex; }
+
+  /* faint tide lines drifting across the whole canvas */
+  .bgwaves { position: absolute; inset: 0; opacity: 0.5; }
+
+  /* ── title ── */
+  #title { flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+  .logo-wrap { width: 240px; height: 240px; filter: drop-shadow(0 12px 48px rgba(34,211,238,0.35)); }
+  .wordmark { font-size: 132px; font-weight: 700; letter-spacing: -0.04em; margin-top: 28px;
+    background: linear-gradient(180deg, #ffffff 0%, #9fe9f6 100%); -webkit-background-clip: text;
+    background-clip: text; color: transparent; }
+  .tagline { font-size: 40px; font-weight: 500; color: var(--ink-sub); margin-top: 14px; letter-spacing: -0.01em; }
+
+  /* ── problem ── */
+  #problem { flex-direction: column; align-items: center; justify-content: center; gap: 46px; padding: 0 200px; }
+  .kicker { font-size: 30px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent); }
+  .head { font-size: 76px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; text-align: center;
+    max-width: 1400px; }
+  .head .dim { color: var(--ink-dim); }
+  .gap-row { display: flex; gap: 26px; margin-top: 8px; }
+  .pill { font-size: 30px; font-weight: 500; color: var(--ink-sub); border: 1px solid #1d2b3d;
+    background: rgba(16,38,63,0.5); padding: 16px 30px; border-radius: 999px; }
+  .pill.bad { color: #f0a4a6; border-color: rgba(229,72,77,0.35); background: rgba(229,72,77,0.08); }
+
+  /* ── outro ── */
+  #outro { flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
+  .outro-logo { width: 150px; height: 150px; filter: drop-shadow(0 8px 32px rgba(34,211,238,0.35)); }
+  .outro-name { font-size: 92px; font-weight: 700; letter-spacing: -0.035em; margin-top: 10px; }
+  .outro-line { font-size: 40px; font-weight: 500; color: var(--ink-sub); }
+  .outro-meta { display: flex; align-items: center; gap: 22px; margin-top: 40px; font-size: 32px;
+    color: var(--ink-dim); font-weight: 500; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-dim); }
+  .repo { color: var(--accent); }
+</style>
+</head>
+<body>
+  <!-- shared background tide waves -->
+  <svg class="bgwaves" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <path d="M-50 720 C260 720 360 470 700 470 C1040 470 1110 690 1410 600 C1660 525 1760 360 1990 250"
+      fill="none" stroke="#164e63" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+    <path d="M-50 800 C260 800 360 560 700 560 C1040 560 1110 770 1410 690 C1660 615 1760 450 1990 340"
+      fill="none" stroke="#0e7490" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+    <path d="M-50 640 C260 640 360 400 700 400 C1040 400 1110 610 1410 520 C1660 445 1760 290 1990 180"
+      fill="none" stroke="#22d3ee" stroke-width="2" stroke-linecap="round" opacity="0.25"/>
+  </svg>
+
+  <!-- TITLE -->
+  <section class="card" id="title">
+    <div class="logo-wrap">
+      <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="deep" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#10263f"/><stop offset="1" stop-color="#070e18"/></linearGradient></defs>
+        <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#deep)"/>
+        <path d="M206 759 C294 759 323 546 420 546 C517 546 536 711 623 682 C701 658 730 488 808 430"
+          fill="none" stroke="#164e63" stroke-width="12" stroke-linecap="round"/>
+        <path d="M206 725 C294 725 323 512 420 512 C517 512 536 677 623 648 C701 624 730 454 808 396"
+          fill="none" stroke="#0e7490" stroke-width="17" stroke-linecap="round"/>
+        <path d="M206 691 C294 691 323 478 420 478 C517 478 536 643 623 614 C701 590 730 420 808 362"
+          fill="none" stroke="#22d3ee" stroke-width="24" stroke-linecap="round"/>
+        <circle cx="808" cy="362" r="34" fill="#e0f7ff"/>
+        <path d="M769 284 L808 241 L847 284" fill="none" stroke="#67e8f9" stroke-width="17"
+          stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="wordmark">Tidecast</div>
+    <div class="tagline">The trading desk for DeepBook Predict</div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="card" id="problem">
+    <div class="kicker">DeepBook Predict — live on testnet</div>
+    <div class="head">On-chain BTC options, priced by a live volatility surface.<br/>
+      <span class="dim">But no way to actually trade it.</span></div>
+    <div class="gap-row">
+      <div class="pill bad">No desk</div>
+      <div class="pill bad">No interface</div>
+      <div class="pill">Just raw RPC + REST</div>
+    </div>
+  </section>
+
+  <!-- OUTRO -->
+  <section class="card" id="outro">
+    <div class="outro-logo">
+      <svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="deep2" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#10263f"/><stop offset="1" stop-color="#070e18"/></linearGradient></defs>
+        <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#deep2)"/>
+        <path d="M206 759 C294 759 323 546 420 546 C517 546 536 711 623 682 C701 658 730 488 808 430"
+          fill="none" stroke="#164e63" stroke-width="12" stroke-linecap="round"/>
+        <path d="M206 725 C294 725 323 512 420 512 C517 512 536 677 623 648 C701 624 730 454 808 396"
+          fill="none" stroke="#0e7490" stroke-width="17" stroke-linecap="round"/>
+        <path d="M206 691 C294 691 323 478 420 478 C517 478 536 643 623 614 C701 590 730 420 808 362"
+          fill="none" stroke="#22d3ee" stroke-width="24" stroke-linecap="round"/>
+        <circle cx="808" cy="362" r="34" fill="#e0f7ff"/>
+        <path d="M769 284 L808 241 L847 284" fill="none" stroke="#67e8f9" stroke-width="17"
+          stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="outro-name">Tidecast</div>
+    <div class="outro-line">Real quotes. Real mints. Signed in-process.</div>
+    <div class="outro-meta">
+      <span class="repo">github.com/JinHe9527/tidecast</span>
+      <span class="dot"></span><span>Sui Overflow 2026</span>
+      <span class="dot"></span><span>DeepBook track</span>
+    </div>
+  </section>
+</body>
+</html>

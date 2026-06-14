@@ -1,0 +1,1 @@
+Pick a side and the ticket prices it instantly. This quote is a real dev-inspect call against the contract, the same volatility surface DeepBook Predict settles on. Change the size, and the cost, the payout, and the implied probability roll live. Flip from Up to Down, and it re-prices in place. No signing, no gas, just the live quote.

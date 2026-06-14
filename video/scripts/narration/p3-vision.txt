@@ -1,0 +1,1 @@
+Tidecast, the trading desk for DeepBook Predict. Real quotes, real mints, signed in-process, on a surface a trader actually wants to use. Next: range positions, the protocol liquidity vault, and copy-trading off the positioning map. Built for Sui Overflow 2026, on the DeepBook track.

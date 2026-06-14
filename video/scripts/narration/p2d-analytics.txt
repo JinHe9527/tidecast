@@ -1,0 +1,1 @@
+And this is the edge. The volatility smile is the live SVI fit for this expiry, the gradient, the at-the-money line, your selected strike, and the skew label telling you which tail the market is paying up for. Beneath it, the positioning map: net minted contracts at every strike, so you can see where everyone else is leaning before you take your side.

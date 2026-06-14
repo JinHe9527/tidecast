@@ -1,0 +1,1 @@
+DeepBook Predict just launched. On-chain Bitcoin options, priced by a live volatility surface, settled on Sui. The pricing is real, and it's already on testnet. But there's no way to actually trade it. No desk. No interface. Just raw RPC calls and a REST endpoint. So we built one.

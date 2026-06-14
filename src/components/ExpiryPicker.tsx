@@ -1,23 +1,30 @@
 import { useEffect, useState } from "react";
-import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { Loader2 } from "lucide-react";
 import type { Oracle } from "@/hooks/useOracles";
+import { cn } from "@/lib/cn";
 
-/** Single-key from a React Aria Selection. */
-function firstKey(keys: Iterable<string | number>): string | undefined {
-  const k = [...keys][0];
-  return k == null ? undefined : String(k);
+/** Local HH:MM for an expiry. */
+function clockLabel(expiry: number): string {
+  return new Date(expiry).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-/** "in 43 min" when close, local HH:MM today, date + time beyond 24h. */
+/** "in 43m" when close, local HH:MM today, date + time beyond 24h. */
 export function expiryLabel(expiry: number, now: number): string {
   const mins = Math.round((expiry - now) / 60_000);
   if (mins <= 0) return "expiring";
-  if (mins < 60) return `in ${mins} min`;
-  const t = new Date(expiry);
-  const hm = t.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  if (mins < 60) return `in ${mins}m`;
+  const hm = clockLabel(expiry);
   if (expiry - now < 24 * 60 * 60_000) return hm;
-  return `${t.toLocaleDateString([], { month: "short", day: "numeric" })} ${hm}`;
+  return `${new Date(expiry).toLocaleDateString([], { month: "short", day: "numeric" })} ${hm}`;
+}
+
+/** Short countdown for the rail row: "43m" / "2h 10m". */
+function countdown(expiry: number, now: number): string {
+  const mins = Math.max(0, Math.round((expiry - now) / 60_000));
+  if (mins === 0) return "expiring";
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  return `${h}h ${mins % 60}m`;
 }
 
 interface ExpiryPickerProps {
@@ -28,7 +35,7 @@ interface ExpiryPickerProps {
   isError: boolean;
 }
 
-/** Rolling hourly expiries — one toggle per live oracle. */
+/** Rolling hourly expiries as a vertical rail — one row per live oracle. */
 export function ExpiryPicker({ oracles, selectedId, onSelect, isPending, isError }: ExpiryPickerProps) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -37,43 +44,56 @@ export function ExpiryPicker({ oracles, selectedId, onSelect, isPending, isError
   }, []);
 
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium uppercase tracking-wider text-ink-subtle">Expiry</span>
+    <div className="flex min-h-0 flex-1 flex-col gap-1.5">
+      <span className="px-1 text-[11px] font-medium uppercase tracking-wider text-ink-tertiary">Expiry</span>
       {isPending ? (
-        <div className="flex gap-2">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-9 w-24 animate-pulse rounded-lg bg-surface-2" />
+        <div className="flex flex-col gap-1">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-11 animate-pulse rounded-md bg-surface-2" />
           ))}
         </div>
       ) : oracles.length === 0 ? (
         isError ? (
-          <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
+          <span className="flex items-center gap-1.5 px-1 text-xs text-ink-subtle">
             <Loader2 aria-hidden className="size-3.5 animate-spin" />
-            Predict server unreachable — retrying…
+            Server unreachable — retrying…
           </span>
         ) : (
-          <span className="text-sm text-ink-subtle">
-            Markets are rolling over — back in a minute.
-          </span>
+          <span className="px-1 text-xs text-ink-subtle">Markets rolling over…</span>
         )
       ) : (
-        <ToggleButtonGroup
-          aria-label="Expiry"
-          className="flex-wrap"
-          disallowEmptySelection
-          selectedKeys={new Set(selectedId ? [selectedId] : [])}
-          selectionMode="single"
-          onSelectionChange={(keys) => {
-            const k = firstKey(keys);
-            if (k) onSelect(k);
-          }}
-        >
-          {oracles.map((o) => (
-            <ToggleButton key={o.oracle_id} className="tabular-nums" id={o.oracle_id}>
-              {expiryLabel(o.expiry, now)}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+        <div aria-label="Expiry" className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto" role="listbox">
+          {oracles.map((o) => {
+            const selected = o.oracle_id === selectedId;
+            return (
+              <button
+                key={o.oracle_id}
+                aria-selected={selected}
+                className={cn(
+                  "relative flex h-11 flex-col justify-center rounded-md pl-3.5 pr-2 text-left outline-none transition-colors",
+                  "hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-accent-focus",
+                  selected && "bg-accent/10",
+                )}
+                role="option"
+                type="button"
+                onClick={() => onSelect(o.oracle_id)}
+              >
+                {selected && (
+                  <span aria-hidden className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent" />
+                )}
+                <span
+                  className={cn(
+                    "text-sm font-medium tabular-nums",
+                    selected ? "text-accent" : "text-ink-muted",
+                  )}
+                >
+                  {clockLabel(o.expiry)}
+                </span>
+                <span className="text-[11px] tabular-nums text-ink-tertiary">{countdown(o.expiry, now)}</span>
+              </button>
+            );
+          })}
+        </div>
       )}
     </div>
   );

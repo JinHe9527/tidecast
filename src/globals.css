@@ -2,7 +2,7 @@
 @import "@heroui/styles";
 
 /* ============================================================
-   WalDrive — HeroUI v3 themed to the Linear design system (DESIGN.md).
+   Tidecast — HeroUI v3 themed to the Linear design system (DESIGN.md).
    Import HeroUI styles, then override its semantic variables to DESIGN's
    palette. Dark is default; light flips via [data-theme="light"].
    @theme bridges our own tokens (canvas/ink/…) onto HeroUI's variables so

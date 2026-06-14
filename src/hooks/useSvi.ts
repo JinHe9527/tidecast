@@ -61,3 +61,31 @@ export function impliedVol(
   if (!(w > 0) || !(yearsToExpiry > 0)) return NaN;
   return Math.sqrt(w / yearsToExpiry);
 }
+
+/** Standard normal CDF (Abramowitz–Stegun 7.1.26). */
+function normCdf(x: number): number {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989422804014327 * Math.exp(-0.5 * x * x);
+  const poly = t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  const p = d * poly;
+  return x >= 0 ? 1 - p : p;
+}
+
+/**
+ * Risk-neutral probability the UP side finishes in-the-money — the Black-style
+ * digital P(S_T ≥ strike) under the SVI smile. An estimate (uses the smile IV at
+ * the strike, ignores skew-derived drift), shown as "est." in the ladder; the
+ * ticket still prices off the live devInspect quote.
+ */
+export function upProbability(
+  svi: SviParams,
+  strike: number,
+  forward: number,
+  yearsToExpiry: number,
+): number {
+  const iv = impliedVol(svi, strike, forward, yearsToExpiry);
+  if (!Number.isFinite(iv) || !(iv > 0) || !(yearsToExpiry > 0)) return NaN;
+  const sd = iv * Math.sqrt(yearsToExpiry);
+  const d2 = (Math.log(forward / strike) - 0.5 * sd * sd) / sd;
+  return normCdf(d2);
+}

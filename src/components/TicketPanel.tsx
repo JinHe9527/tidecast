@@ -1,112 +1,57 @@
-import { useRef, useState } from "react";
-import { motion } from "motion/react";
-import { NumberField, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { Check, Loader2, TrendingDown, TrendingUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { NumberField } from "@heroui/react";
+import { Check, ExternalLink, Loader2, TrendingDown, TrendingUp, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useDusdc } from "@/hooks/useDusdc";
 import { useManager, useManagerBalance } from "@/hooks/useManager";
 import { useTrade } from "@/hooks/useTrade";
 import type { Direction, Quote } from "@/hooks/useQuote";
-import { fmtDusdc, fmtUsd } from "@/lib/constants";
+import { DUSDC } from "@/lib/constants";
+import { openExternal } from "@/lib/openExternal";
+import { cn } from "@/lib/cn";
 
-/** Single-key from a React Aria Selection. */
-function firstKey(keys: Iterable<string | number>): string | undefined {
-  const k = [...keys][0];
-  return k == null ? undefined : String(k);
+const PRESETS = [10, 25, 50] as const;
+
+/** dUSDC raw → display number. */
+const toDusdc = (raw: bigint | number) => Number(raw) / 10 ** DUSDC.DECIMALS;
+
+/** A 6-dec dUSDC figure that springs to its target over ~250ms. */
+function Rolling({ value, digits = 2 }: { value: number; digits?: number }) {
+  const mv = useMotionValue(value);
+  const spring = useSpring(mv, { duration: 0.25, bounce: 0 });
+  const text = useTransform(spring, (v) => v.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits }));
+  useEffect(() => {
+    mv.set(value);
+  }, [value, mv]);
+  return <motion.span>{text}</motion.span>;
 }
 
-interface MintActionProps {
-  oracleId: string | undefined;
-  expiry: number | undefined;
-  strike: number | undefined;
-  direction: Direction;
-  quote: Quote | undefined;
-  quoteReady: boolean;
-}
-
-/** Manager bootstrap + balances + the Mint button — the write side of the ticket. */
-function MintAction(p: MintActionProps) {
-  const { managerId, isPending: managerPending, create } = useManager();
-  const { data: walletDusdc } = useDusdc();
-  const { data: managerDusdc } = useManagerBalance(managerId);
-  const { mint } = useTrade();
-  const [justMinted, setJustMinted] = useState(false);
-  const flashTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const combined = (walletDusdc ?? 0n) + (managerDusdc ?? 0n);
-  const insufficient = p.quote !== undefined && combined < p.quote.cost;
-  const ready =
-    !!managerId &&
-    !!p.oracleId &&
-    p.expiry !== undefined &&
-    p.strike !== undefined &&
-    p.quote !== undefined &&
-    p.quoteReady &&
-    !insufficient;
-
-  function onMint() {
-    if (!managerId || !p.oracleId || p.expiry === undefined || p.strike === undefined || !p.quote) {
-      return;
-    }
-    mint.mutate(
-      {
-        managerId,
-        managerBalance: managerDusdc ?? 0n,
-        oracleId: p.oracleId,
-        expiry: p.expiry,
-        strike: p.strike,
-        direction: p.direction,
-        amountRaw: BigInt(p.quote.amountRaw),
-        costRaw: p.quote.cost,
-      },
-      {
-        onSuccess: () => {
-          setJustMinted(true);
-          clearTimeout(flashTimer.current);
-          flashTimer.current = setTimeout(() => setJustMinted(false), 2_500);
-        },
-      },
-    );
-  }
-
+/** Bottom-right success toast with a Suiscan link to the mint tx. */
+function MintToast({ digest, onClose }: { digest: string; onClose: () => void }) {
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-xs tabular-nums text-ink-subtle">
-        <span>Wallet {walletDusdc !== undefined ? fmtDusdc(walletDusdc) : "—"}</span>
-        <span>Account {managerDusdc !== undefined ? fmtDusdc(managerDusdc) : "—"}</span>
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      className="lift-2 fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-xl border border-hairline bg-surface-1 px-4 py-3"
+      exit={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 12 }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <Check aria-hidden className="size-4 shrink-0 text-success" />
+      <div className="flex flex-col">
+        <span className="text-sm text-ink">Position minted</span>
+        <button
+          className="flex items-center gap-1 text-xs text-accent outline-none hover:underline"
+          type="button"
+          onClick={() => openExternal(`https://suiscan.xyz/testnet/tx/${digest}`)}
+        >
+          View on Suiscan <ExternalLink className="size-3" />
+        </button>
       </div>
-      {!managerId ? (
-        <Button
-          className="w-full"
-          isDisabled={managerPending}
-          isPending={create.isPending}
-          onPress={() => create.mutate()}
-        >
-          {managerPending ? "Looking up trading account…" : "Create trading account"}
-        </Button>
-      ) : (
-        <Button
-          className="w-full"
-          isDisabled={!ready || justMinted}
-          isPending={mint.isPending}
-          onPress={onMint}
-        >
-          {justMinted ? (
-            <>
-              <Check aria-hidden className="size-4" /> Minted
-            </>
-          ) : insufficient ? (
-            "Need more dUSDC"
-          ) : (
-            `Mint ${p.direction === "up" ? "Up" : "Down"}`
-          )}
-        </Button>
-      )}
-      {create.error && <span className="text-xs text-danger">{create.error.message}</span>}
-      {mint.error && !mint.isPending && (
-        <span className="text-xs text-danger">{mint.error.message}</span>
-      )}
-    </div>
+      <Button isIconOnly aria-label="Dismiss" size="sm" variant="ghost" onPress={onClose}>
+        <X className="size-3.5" />
+      </Button>
+    </motion.div>
   );
 }
 
@@ -123,88 +68,160 @@ interface TicketPanelProps {
   error: Error | null;
 }
 
-/** Order ticket — direction, amount, live devInspect quote, one-click mint. */
+/** Order ticket — direction halves, amount + presets, payout-explicit quote, one-click mint. */
 export function TicketPanel(p: TicketPanelProps) {
-  const summary =
-    p.strike !== undefined && p.expiry !== undefined
-      ? `${p.direction === "up" ? "Up" : "Down"} from ${fmtUsd(p.strike)} · expires ${new Date(
-          p.expiry,
-        ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-      : "Pick an expiry and a strike to price a position.";
+  const { managerId, isPending: managerPending, create } = useManager();
+  const { data: walletDusdc } = useDusdc();
+  const { data: managerDusdc } = useManagerBalance(managerId);
+  const { mint } = useTrade();
+  const [digest, setDigest] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const spendable = toDusdc((walletDusdc ?? 0n) + (managerDusdc ?? 0n));
+  const insufficient = p.quote !== undefined && toDusdc(p.quote.cost) > spendable;
+  const ready =
+    !!managerId &&
+    !!p.oracleId &&
+    p.expiry !== undefined &&
+    p.strike !== undefined &&
+    p.quote !== undefined &&
+    !p.isFetching &&
+    !p.error &&
+    !insufficient;
+
+  // Payout math straight off the quote: amountRaw pays 1 dUSDC/unit if right.
+  const cost = p.quote ? toDusdc(p.quote.cost) : 0;
+  const payout = p.quote ? toDusdc(p.quote.amountRaw) : 0;
+  const prob = p.quote && payout > 0 ? (cost / payout) * 100 : null;
+  const maxReturn = p.quote && cost > 0 ? ((payout - cost) / cost) * 100 : null;
+
+  function onMint() {
+    if (!managerId || !p.oracleId || p.expiry === undefined || p.strike === undefined || !p.quote) return;
+    mint.mutate(
+      {
+        managerId,
+        managerBalance: managerDusdc ?? 0n,
+        oracleId: p.oracleId,
+        expiry: p.expiry,
+        strike: p.strike,
+        direction: p.direction,
+        amountRaw: BigInt(p.quote.amountRaw),
+        costRaw: p.quote.cost,
+      },
+      {
+        onSuccess: (d) => {
+          setDigest(d);
+          clearTimeout(toastTimer.current);
+          toastTimer.current = setTimeout(() => setDigest(null), 6_000);
+        },
+      },
+    );
+  }
 
   return (
-    <div className="lift flex flex-col gap-4 rounded-xl border border-hairline bg-surface-1 p-4">
-      <span className="text-xs font-medium uppercase tracking-wider text-ink-subtle">Ticket</span>
+    <div className="lift flex flex-col gap-3 rounded-xl border border-hairline bg-surface-1 p-3">
+      <span className="text-[11px] font-medium uppercase tracking-wider text-ink-tertiary">Ticket</span>
 
-      <ToggleButtonGroup
-        aria-label="Direction"
-        disallowEmptySelection
-        selectedKeys={new Set([p.direction])}
-        selectionMode="single"
-        onSelectionChange={(keys) => {
-          const k = firstKey(keys);
-          if (k === "up" || k === "down") p.onDirection(k);
-        }}
-      >
-        <ToggleButton className="flex-1 data-selected:bg-success/15 data-selected:text-success" id="up">
-          <TrendingUp className="size-4" /> Up
-        </ToggleButton>
-        <ToggleButton className="flex-1 data-selected:bg-danger/15 data-selected:text-danger" id="down">
-          <TrendingDown className="size-4" /> Down
-        </ToggleButton>
-      </ToggleButtonGroup>
-
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-ink-muted">Amount · dUSDC</span>
-        <NumberField
-          aria-label="Amount (dUSDC)"
-          minValue={1}
-          value={p.amount}
-          onChange={(v) => Number.isFinite(v) && p.onAmount(v)}
-        >
-          <NumberField.Group className="w-36">
-            <NumberField.DecrementButton />
-            <NumberField.Input />
-            <NumberField.IncrementButton />
-          </NumberField.Group>
-        </NumberField>
+      <div className="grid grid-cols-2 gap-2">
+        {(["up", "down"] as const).map((d) => {
+          const sel = p.direction === d;
+          const up = d === "up";
+          return (
+            <button
+              key={d}
+              className={cn(
+                "flex h-12 items-center justify-center gap-1.5 rounded-lg border text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent-focus",
+                sel
+                  ? up
+                    ? "border-success/60 bg-success/20 text-success"
+                    : "border-danger/60 bg-danger/20 text-danger"
+                  : "border-hairline bg-surface-2 text-ink-subtle hover:text-ink-muted",
+              )}
+              type="button"
+              onClick={() => p.onDirection(d)}
+            >
+              {up ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
+              {up ? "Up" : "Down"}
+            </button>
+          );
+        })}
       </div>
 
-      <div className="flex min-h-16 flex-col justify-center gap-1 rounded-lg bg-surface-2 px-3 py-2.5">
-        <span className="text-xs text-ink-subtle">{summary}</span>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-ink-subtle">Amount · dUSDC</span>
+          <NumberField aria-label="Amount (dUSDC)" minValue={1} value={p.amount} onChange={(v) => Number.isFinite(v) && p.onAmount(v)}>
+            <NumberField.Group className="w-32">
+              <NumberField.DecrementButton />
+              <NumberField.Input />
+              <NumberField.IncrementButton />
+            </NumberField.Group>
+          </NumberField>
+        </div>
+        <div className="flex gap-1">
+          {PRESETS.map((v) => (
+            <Button key={v} className="flex-1" size="sm" variant={p.amount === v ? "secondary" : "ghost"} onPress={() => p.onAmount(v)}>
+              {v}
+            </Button>
+          ))}
+          <Button
+            className="flex-1"
+            isDisabled={spendable < 1}
+            size="sm"
+            variant={p.amount === Math.floor(spendable) && spendable >= 1 ? "secondary" : "ghost"}
+            onPress={() => p.onAmount(Math.max(1, Math.floor(spendable)))}
+          >
+            Max
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2 rounded-lg bg-surface-2 px-3 py-3">
         {p.error ? (
           <span className="text-xs text-danger">{p.error.message}</span>
         ) : p.quote ? (
-          <span className="flex items-center gap-1.5 text-sm tabular-nums text-ink">
-            {/* keyed remount fades the new numbers in; transform-only, no layout shift */}
-            <motion.span
-              key={`${p.quote.cost}|${p.quote.amountRaw}`}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-block"
-              initial={{ opacity: 0.35, y: 2 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-            >
-              Cost ≈ {fmtDusdc(p.quote.cost)} · payout if right ≈ {fmtDusdc(p.quote.amountRaw)}
-            </motion.span>
-            {p.isFetching && (
-              <Loader2 aria-hidden className="size-3.5 animate-spin text-ink-subtle" />
+          <>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-xs text-ink-subtle">Cost</span>
+              <span className="flex items-center gap-1.5 text-lg font-semibold tabular-nums text-ink">
+                <Rolling value={cost} /> <span className="text-xs font-normal text-ink-subtle">dUSDC</span>
+                {p.isFetching && <Loader2 aria-hidden className="size-3 animate-spin text-ink-tertiary" />}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-xs text-ink-subtle">Payout if right</span>
+              <span className="text-lg font-semibold tabular-nums text-success">
+                <Rolling value={payout} /> <span className="text-xs font-normal text-ink-subtle">dUSDC</span>
+              </span>
+            </div>
+            {prob !== null && maxReturn !== null && (
+              <span className="text-[11px] tabular-nums text-ink-tertiary">
+                ≈ {prob.toFixed(0)}% implied · +{maxReturn.toFixed(0)}% if right
+              </span>
             )}
-          </span>
+          </>
         ) : p.isFetching ? (
           <span className="flex items-center gap-1.5 text-sm text-ink-subtle">
             <Loader2 aria-hidden className="size-3.5 animate-spin" /> pricing…
           </span>
-        ) : null}
+        ) : (
+          <span className="text-xs text-ink-subtle">Pick a strike side to price a position.</span>
+        )}
       </div>
 
-      <MintAction
-        direction={p.direction}
-        expiry={p.expiry}
-        oracleId={p.oracleId}
-        quote={p.quote}
-        quoteReady={!p.isFetching && !p.error}
-        strike={p.strike}
-      />
+      {!managerId ? (
+        <Button className="h-11 w-full" isDisabled={managerPending} isPending={create.isPending} onPress={() => create.mutate()}>
+          {managerPending ? "Looking up account…" : "Create trading account"}
+        </Button>
+      ) : (
+        <Button className="h-11 w-full text-base" isDisabled={!ready} isPending={mint.isPending} onPress={onMint}>
+          {insufficient ? "Need more dUSDC" : `Mint ${p.direction === "up" ? "Up" : "Down"}`}
+        </Button>
+      )}
+      {create.error && <span className="text-xs text-danger">{create.error.message}</span>}
+      {mint.error && !mint.isPending && <span className="text-xs text-danger">{mint.error.message}</span>}
+
+      <AnimatePresence>{digest && <MintToast digest={digest} onClose={() => setDigest(null)} />}</AnimatePresence>
     </div>
   );
 }

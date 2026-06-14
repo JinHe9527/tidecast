@@ -17,8 +17,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@waldrive/shared": ["./packages/shared/src/index.ts"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "vite.config.ts"],

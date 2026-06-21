@@ -11,7 +11,7 @@ const N = 81; // fixed sample count keeps `d` tweening cleanly between fits
 // Log-moneyness half-width of the plotted surface. A smile is only a smile over
 // a wide strike span; the tradeable ladder (±4 ticks ≈ ±0.006%) is a sliver at
 // ATM, so we draw the whole curve and mark that sliver on it.
-const K_HALF = 0.25;
+const K_HALF = 0.45;
 
 interface VolSmileProps {
   oracleId: string | undefined;

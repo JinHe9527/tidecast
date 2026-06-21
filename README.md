@@ -47,7 +47,7 @@ Real on-chain integration, verified on testnet:
 | Our `PredictManager` (shared object) `0xbee649118662e9081042de04bb4796d224768ae8d5ef51e39c8daa7e0d575bd1` | [Suiscan](https://suiscan.xyz/testnet/object/0xbee649118662e9081042de04bb4796d224768ae8d5ef51e39c8daa7e0d575bd1) |
 | DeepBook Predict package (integrated) `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` | [Suiscan](https://suiscan.xyz/testnet/object/0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138) |
 
-![One click mints the position on testnet — signed in-process, with a Suiscan link in the toast](submission/media/real-mint.gif)
+![One click mints the position on testnet — signed in-process, with a Suiscan link in the toast](submission/media/03-mint.jpg)
 
 ## What sets it apart
 

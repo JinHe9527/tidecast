@@ -4,11 +4,13 @@
   <img src="icons/logo-1024.png" alt="Tidecast logo" width="160" height="160">
 </p>
 
-**The trading desk for DeepBook Predict** — Sui's on-chain BTC prediction market, priced by a live SVI volatility surface. Watch the surface move, see where the market is positioned, and mint or redeem a position in two clicks. Built for the Sui Overflow 2026 DeepBook track.
+**The trading desk for DeepBook Predict** — Sui's on-chain BTC prediction market, priced by a live SVI volatility surface. Most front-ends on Predict give you a bet button; Tidecast gives you the desk — watch the volatility surface move, read where the market is positioned across every strike, and mint or redeem in two clicks. Built for the Sui Overflow 2026 DeepBook track.
 
 Tidecast is a cross-platform desktop app (Tauri 2.0 + React). It signs transactions in-process with a local Ed25519 keypair — no wallet extension, no popups.
 
 > Tidecast ships no Move package of its own — it is a pure integration: the on-chain logic *is* DeepBook Predict, called through its public entry functions.
+
+![Tidecast — the live volatility smile, strike ladder, order ticket and positions in one terminal](submission/media/01-terminal.jpg)
 
 ## Features
 
@@ -44,6 +46,24 @@ Real on-chain integration, verified on testnet:
 | Real mint, tx digest `8wDTPzWhoq9YKVT95nVKJnBjqmMkPF1UNKCxvgiZmUif` | [Suiscan](https://suiscan.xyz/testnet/tx/8wDTPzWhoq9YKVT95nVKJnBjqmMkPF1UNKCxvgiZmUif) |
 | Our `PredictManager` (shared object) `0xbee649118662e9081042de04bb4796d224768ae8d5ef51e39c8daa7e0d575bd1` | [Suiscan](https://suiscan.xyz/testnet/object/0xbee649118662e9081042de04bb4796d224768ae8d5ef51e39c8daa7e0d575bd1) |
 | DeepBook Predict package (integrated) `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` | [Suiscan](https://suiscan.xyz/testnet/object/0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138) |
+
+## What sets it apart
+
+DeepBook Predict has a few front-ends now — a Telegram betting game, an AI chat
+assistant, a payoff-curve builder. Tidecast is the one built for whoever actually
+prices the trade:
+
+- **The volatility surface, drawn.** A live SVI vol smile and a per-strike
+  positioning heatmap, sharing one strike axis with the ladder — hover a strike
+  and the smile marker, the heat bar and the ticket all track it. The surface *is*
+  the product, not a number buried behind a quote.
+- **A native desk, not a web page.** Tauri desktop with in-process signing — no
+  wallet popup, no browser chrome. The density and latency of a real trading
+  terminal, not a dapp tab.
+- **Real and checkable.** Gas-free `devInspect` quotes and a real testnet mint you
+  can open on Suiscan (digest above) — no mock counterparty, no placeholder charts.
+
+![Hover a strike — the smile marker, the positioning bar and the ticket move together](submission/media/cross-link.gif)
 
 ## Getting started
 

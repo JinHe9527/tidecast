@@ -69,18 +69,61 @@ prices the trade:
 
 ## Getting started
 
+> **TL;DR for reviewers** — runs with **zero configuration**: no env vars, no API keys,
+> no database, no backend. Just `bun install && bun dev`, open the URL, click
+> *Generate a new wallet*. Everything reads live from public Sui testnet + the
+> Predict server.
+
+### 1. Prerequisites
+
+- **[Bun](https://bun.sh)** ≥ 1.1 — the only requirement for the web app
+  (install: `curl -fsSL https://bun.sh/install | bash`). Nothing else; no Node, no `.env`.
+
+### 2. Run it (browser — the quickest way to review)
+
 ```bash
-bun install
-bun dev          # browser preview at http://localhost:5174
-bun tauri dev    # the desktop window
+bun install      # ~3s, ~250 packages, no native build
+bun dev          # Vite dev server
 ```
 
-To trade you need, in the in-app wallet:
+Open **http://localhost:5174** — `/` is the landing page, **`/app`** is the console.
 
-- **Testnet SUI** for gas — the official faucet, guided from onboarding
+On first load `/app` shows onboarding: click **Generate a new wallet** (a local
+Ed25519 keypair, testnet-only, stored in the browser). The terminal then loads with
+the **live BTC price, the SVI volatility smile, the strike ladder and gas-free
+quotes** — no funds needed to explore.
+
+### 3. Trade for real (optional)
+
+To actually mint a position you need, in the in-app wallet:
+
+- **Testnet SUI** for gas — the official faucet at [faucet.sui.io](https://faucet.sui.io) (guided from onboarding)
 - **dUSDC** (the quote asset) — there is **no public mint**; request it via the official DeepBook Predict form
 
-All reads and live quotes work without dUSDC.
+All reads and live quotes work **without** dUSDC.
+
+### 4. Desktop app (optional)
+
+```bash
+bun tauri dev    # native window — needs Rust + your OS's Tauri prerequisites
+```
+
+See [tauri.app/start/prerequisites](https://tauri.app/start/prerequisites) for the Rust + system deps. The browser path above needs none of this.
+
+### 5. Verify the build
+
+```bash
+bun run typecheck   # tsc --noEmit — clean
+bun run build       # vite build → dist/
+```
+
+### Configuration
+
+**No environment variables are required.** Every on-chain constant (the DeepBook
+Predict package, the Predict server URL, the dUSDC type, the network) is baked in
+for testnet — see [`src/lib/constants.ts`](src/lib/constants.ts). Optionally, set
+`VITE_TIDECAST_KEYPAIR=suiprivkey1...` in `.env.local` to pre-seed the wallet on
+first run (see [`.env.example`](.env.example)).
 
 ## Tech stack
 

@@ -7,7 +7,7 @@ import { Footer } from "./Footer";
 // Editorial light theme; the embedded dark terminal shots carry the contrast.
 export function Landing() {
   return (
-    <div className="min-h-dvh bg-[#f4f4f2] font-sans text-[#0b0b0c] antialiased selection:bg-[#0ea5c4] selection:text-white [&_*]:select-text">
+    <div className="min-h-dvh bg-[#080b10] font-sans text-[#f3f5f8] antialiased selection:bg-[#22d3ee] selection:text-[#06121a] [&_*]:select-text">
       <Hero />
       <Moats />
       <Showcase />

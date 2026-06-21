@@ -20,18 +20,18 @@ export function Moats() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-20">
       <h2 className="mb-3 text-3xl font-black uppercase tracking-tight sm:text-4xl">What sets it apart</h2>
-      <p className="mb-10 max-w-2xl text-black/60">
+      <p className="mb-10 max-w-2xl text-white/60">
         DeepBook Predict has a few front-ends now — a Telegram betting game, an AI chat assistant,
         a payoff-curve builder. Tidecast is the one built for whoever actually prices the trade.
       </p>
       <div className="grid gap-4 md:grid-cols-3">
         {MOATS.map((m) => (
-          <div key={m.n} className="flex flex-col rounded-xl border border-black/10 bg-white p-6">
-            <span className="mb-5 inline-flex size-9 items-center justify-center rounded-md bg-[#0ea5c4] font-mono text-sm font-bold text-white">
+          <div key={m.n} className="flex flex-col rounded-xl border border-white/10 bg-[#0f141c] p-6">
+            <span className="mb-5 inline-flex size-9 items-center justify-center rounded-md bg-[#22d3ee] font-mono text-sm font-bold text-[#06121a]">
               {m.n}
             </span>
             <h3 className="text-lg font-bold uppercase tracking-tight">{m.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-black/60">{m.body}</p>
+            <p className="mt-2 text-sm leading-relaxed text-white/60">{m.body}</p>
           </div>
         ))}
       </div>

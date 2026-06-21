@@ -18,7 +18,7 @@ const SHOTS: { src: string; cap: string; narrow?: boolean; right?: boolean }[] =
 
 export function Showcase() {
   return (
-    <section className="border-y border-black/10 bg-[#0a0e16] py-20">
+    <section className="border-y border-white/10 bg-[#0b0f17] py-20">
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="mb-10 text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">Inside the terminal</h2>
         <div className="space-y-6">

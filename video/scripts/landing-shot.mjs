@@ -1,0 +1,10 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch();
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 }, deviceScaleFactor: 1.5, colorScheme: "dark" });
+await ctx.addInitScript(() => localStorage.setItem("tidecast-theme", "dark"));
+const page = await ctx.newPage();
+await page.goto("http://localhost:5174/", { waitUntil: "networkidle" });
+await page.waitForTimeout(2000);
+await page.screenshot({ path: "/tmp/landing-full.jpg", type: "jpeg", quality: 78, fullPage: true });
+await browser.close();
+console.log("ok");

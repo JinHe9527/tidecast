@@ -4,13 +4,13 @@ const SHOTS: { src: string; cap: string; narrow?: boolean; right?: boolean }[] =
     cap: "The live volatility smile, strike ladder, order ticket and positions — one linked instrument.",
   },
   {
-    src: "/landing/real-mint.gif",
-    cap: "One click mints on testnet — signed in-process, with a Suiscan link in the toast.",
+    src: "/landing/04-smile.jpg",
+    cap: "The live SVI fit over the full surface — the ATM trough, your strike, and the skew the market is paying up for.",
     narrow: true,
   },
   {
-    src: "/landing/04-smile.jpg",
-    cap: "The SVI fit, the ATM line, your strike, and the skew the market is paying up for.",
+    src: "/landing/03-mint.jpg",
+    cap: "One click mints on testnet — signed in-process, with a Suiscan link in the toast.",
     narrow: true,
     right: true,
   },

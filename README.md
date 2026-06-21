@@ -10,7 +10,7 @@ Tidecast is a cross-platform desktop app (Tauri 2.0 + React). It signs transacti
 
 > Tidecast ships no Move package of its own — it is a pure integration: the on-chain logic *is* DeepBook Predict, called through its public entry functions.
 
-![Tidecast — the live volatility smile, strike ladder, order ticket and positions in one terminal](submission/media/01-terminal.gif)
+![Tidecast — the live volatility smile, strike ladder, order ticket and positions in one terminal](submission/media/01-terminal.jpg)
 
 ## Features
 
@@ -47,7 +47,7 @@ Real on-chain integration, verified on testnet:
 | Our `PredictManager` (shared object) `0xbee649118662e9081042de04bb4796d224768ae8d5ef51e39c8daa7e0d575bd1` | [Suiscan](https://suiscan.xyz/testnet/object/0xbee649118662e9081042de04bb4796d224768ae8d5ef51e39c8daa7e0d575bd1) |
 | DeepBook Predict package (integrated) `0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138` | [Suiscan](https://suiscan.xyz/testnet/object/0xf5ea2b3749c65d6e56507cc35388719aadb28f9cab873696a2f8687f5c785138) |
 
-![One click mints the position on testnet — signed in-process, with a Suiscan link in the toast](submission/media/03-mint.gif)
+![One click mints the position on testnet — signed in-process, with a Suiscan link in the toast](submission/media/03-mint.jpg)
 
 ## What sets it apart
 
@@ -65,7 +65,7 @@ prices the trade:
 - **Real and checkable.** Gas-free `devInspect` quotes and a real testnet mint you
   can open on Suiscan (digest above) — no mock counterparty, no placeholder charts.
 
-![The live SVI volatility smile — strike × implied vol, plotted over the full surface with the ATM trough and your strike marked on it](submission/media/04-smile.gif)
+![The live SVI volatility smile — strike × implied vol, plotted over the full surface with the ATM trough and your strike marked on it](submission/media/04-smile.jpg)
 
 ## Getting started
 

@@ -127,6 +127,14 @@
   animation: row-flash 1.6s var(--ease-out) 1;
 }
 
+/* Faint editorial grid behind the browser landing hero. */
+@utility editorial-grid {
+  background-image:
+    linear-gradient(to right, #0000000a 1px, transparent 1px),
+    linear-gradient(to bottom, #0000000a 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
 /* Transparent so macOS window vibrancy shows through. */
 html,
 body {

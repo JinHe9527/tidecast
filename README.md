@@ -65,7 +65,7 @@ prices the trade:
 - **Real and checkable.** Gas-free `devInspect` quotes and a real testnet mint you
   can open on Suiscan (digest above) — no mock counterparty, no placeholder charts.
 
-![Hover a strike — the smile marker, the positioning bar and the ticket move together](submission/media/cross-link.gif)
+![The live SVI volatility smile — strike × implied vol, plotted over the full surface with the ATM trough and your strike marked on it](submission/media/04-smile.jpg)
 
 ## Getting started
 

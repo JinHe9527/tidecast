@@ -1,0 +1,14 @@
+import { chromium } from "playwright";
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: 1280, height: 860 }, colorScheme: "dark" });
+const errs = [];
+const page = await ctx.newPage();
+page.on("console", (m) => { if (m.type() === "error") errs.push(m.text()); });
+page.on("pageerror", (e) => errs.push("PAGEERROR: " + e.message));
+await page.goto("http://localhost:5174/app", { waitUntil: "networkidle" });
+await page.waitForTimeout(3500);
+const txt = (await page.locator("body").innerText()).slice(0, 300);
+await page.screenshot({ path: "/tmp/fresh-app.jpg", type: "jpeg", quality: 75 });
+await b.close();
+console.log("CONSOLE ERRORS:", errs.length ? JSON.stringify(errs.slice(0, 8)) : "none");
+console.log("BODY:", txt.replace(/\n+/g, " | "));

@@ -110,12 +110,20 @@ bun tauri dev    # native window — needs Rust + your OS's Tauri prerequisites
 
 See [tauri.app/start/prerequisites](https://tauri.app/start/prerequisites) for the Rust + system deps. The browser path above needs none of this.
 
-### 5. Verify the build
+### 5. Verify it works
 
 ```bash
 bun run typecheck   # tsc --noEmit — clean
 bun run build       # vite build → dist/
+bun run test        # vitest unit suite (quote decode, SVI math, strike grid, formatters)
+bun run smoke       # LIVE: fetches an active oracle + BTC spot + a gas-free devInspect quote — no wallet, no funds
 ```
+
+`bun run smoke` is the fastest way to confirm the DeepBook Predict integration is
+real: it hits the public Predict server and runs the exact on-chain
+`get_trade_amounts` quote the app uses, then prints the live price and quote. A
+clean `✅ PASS` means everything downstream (the terminal, the smile, minting)
+talks to the same live testnet.
 
 ### Configuration
 

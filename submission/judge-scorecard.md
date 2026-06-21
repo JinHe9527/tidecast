@@ -45,25 +45,38 @@ Field scan + per-project deep-dive, 2026-06-22.
 
 ## Where Tidecast stands
 
-Top tier, alongside CallIt / strike5 / DeepPilot. The whole top of this board is
-"cold-clone runnable + real chain"; that's table stakes now, and Tidecast clears it
-(verified below). The separation comes from **what only Tidecast has**:
+Top tier on the thing that gates everything — **runnability**: cold-clone `bun install
+&& bun dev` to a rendered terminal with zero env, plus `bun run smoke` for a one-command
+live proof. That's table stakes among the leaders and we clear it cleanly.
 
-1. **The implied-volatility surface, drawn.** Every same-protocol rival *consumes*
-   the SVI quote; none renders the strike × IV smile. DeepVol names itself after
-   volatility and still doesn't draw it; PredictGuard's heatmap is exposure, not IV.
-   This is Tidecast's moat and the hardest thing on the board to copy.
-2. **Desktop-native + one-click wallet.** Tauri terminal with an in-process keypair —
-   a reviewer clicks *Generate a wallet* and is in. Every rival needs a browser
-   extension wallet connected (and most need funds) before anything moves.
-3. **Tests + a live smoke.** A vitest unit suite *and* `bun run smoke`, a read-only
-   one-command proof the integration is live (strike5 has no tests; most have no
-   single-command live check).
+**Honest correction — this pass overturned our earlier claim.** Tidecast is *not* the
+only one, nor the best, at drawing the volatility surface. A cluster renders a true 3D
+SVI surface (built + verified this pass), and on pure vol-visualization some exceed our
+2D smile:
 
-Honest weaknesses, same lens: **no Move package of our own** (a pure integration —
-shared with CallIt / strike5 / VolShape, acceptable for this track) and the field is
-crowded with equally-runnable entries, so the win has to come from the surface + the
-desktop polish, not from "we also integrated Predict".
+- **Predict Quant Suite** — 3D SVI surface (three.js) + smile + vol cone + term structure
+  + no-arb checks. Vol-viz is a **superset** of ours.
+- **RangeBook** — rotatable 3D SVI mesh + smile + mispricing heatmap + multi-leg strategy
+  mint + Breeden–Litzenberger density (11 math tests).
+- **Skew / deepskew / VWATCH** — 3D strike×IV surfaces with no-arb checks; Skew & deepskew
+  add on-chain trading + their own deployed Move contracts.
+- (Vortex labels a 2D CSS-bar smile "vol surface"; most others render only a scalar/bar.)
+
+**What is still genuinely ours, and defensible:**
+
+1. **The only desktop-native terminal.** Every surface-drawer above is a web app with a
+   wallet-extension popup. Tidecast is a Tauri desktop terminal signing in-process — no
+   popup, no browser chrome. That's a form-factor edge they can't match without rebuilding.
+2. **The surface that actually shows up.** Ours is default-on, cold-clone-visible, no
+   backend. RangeBook's 3D surface is `VITE_VOL_SURFACE_ENABLED=false` by default (a
+   cold-cloning reviewer won't see it) and its multi-expiry mesh is interpolated from one
+   SVI print; PQS's surface depends on the team's own hosted backend staying up. For an AI
+   reviewer running it in 30 seconds, ours is the most reliable to actually see.
+3. **One-command verification.** `bun run smoke` (live) + a vitest suite.
+
+**Honest weaknesses:** no Move package of our own (pure integration — shared with many);
+a 2D smile, not 3D; and the surface is no longer a moat. The win now has to come from the
+desktop form-factor, demo reliability, and execution polish — not from "we draw the surface".
 
 ## Tidecast runnability — verified
 

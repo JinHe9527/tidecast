@@ -4,6 +4,17 @@ Field scan of the Sui Overflow 2026 DeepBook track, 2026-06-21. Every entry belo
 was read from source (GitHub repos, live sites, on-chain state on Sui testnet), not
 from the pitch text. The point: locate Tidecast's defensible ground in the final hours.
 
+> **⚠️ Correction (2026-06-22).** This doc scanned only the ~9 hoh-zone CN entries.
+> A full sweep of all **95** DeepBook projects on DeepSurge overturned the "no one
+> draws the volatility surface" claim below: **5 projects render a true 3D SVI surface**
+> — Predict Quant Suite, RangeBook, Skew, deepskew, VWATCH — and on pure vol-viz two of
+> them exceed Tidecast's 2D smile. The surface is **not** Tidecast's moat. The still-true
+> edge is being the **only desktop-native terminal** with a default-on, cold-clone-visible
+> surface (those rivals are web apps; RangeBook's 3D surface is flag-disabled by default,
+> PQS's depends on its own backend). The claims of uniqueness in the TL;DR and bullet 1
+> below are superseded — see `judge-scorecard.md` and `deepbook-field.md` for the corrected
+> full-field assessment.
+
 ## TL;DR
 
 The DeepBook track splits into **DeepBook Predict** (the on-chain BTC options/

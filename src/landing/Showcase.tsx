@@ -1,15 +1,15 @@
 const SHOTS: { src: string; cap: string; narrow?: boolean; right?: boolean }[] = [
   {
-    src: "/landing/01-terminal.jpg",
+    src: "/landing/01-terminal.gif",
     cap: "The live volatility smile, strike ladder, order ticket and positions — one linked instrument.",
   },
   {
-    src: "/landing/04-smile.jpg",
+    src: "/landing/04-smile.gif",
     cap: "The live SVI fit over the full surface — the ATM trough, your strike, and the skew the market is paying up for.",
     narrow: true,
   },
   {
-    src: "/landing/03-mint.jpg",
+    src: "/landing/03-mint.gif",
     cap: "One click mints on testnet — signed in-process, with a Suiscan link in the toast.",
     narrow: true,
     right: true,

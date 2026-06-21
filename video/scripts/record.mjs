@@ -17,7 +17,7 @@ import { dirname, resolve } from "node:path";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, "../out/clips");
 const STATE = resolve(OUT, "storage-state.json");
-const URL = "http://localhost:5174/";
+const URL = "http://localhost:5174/app";
 const VIEWPORT = { width: 1920, height: 1080 };
 // recordVideo.size MUST equal the viewport — Playwright pads (not scales) a larger
 // canvas with grey. deviceScaleFactor:2 still renders the page at 2x device pixels,

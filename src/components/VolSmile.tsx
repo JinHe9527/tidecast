@@ -8,20 +8,26 @@ const W = 720;
 const H = 248;
 const PAD = { top: 14, right: 16, bottom: 22, left: 46 };
 const N = 81; // fixed sample count keeps `d` tweening cleanly between fits
+// Log-moneyness half-width of the plotted surface. A smile is only a smile over
+// a wide strike span; the tradeable ladder (±4 ticks ≈ ±0.006%) is a sliver at
+// ATM, so we draw the whole curve and mark that sliver on it.
+const K_HALF = 0.25;
 
 interface VolSmileProps {
   oracleId: string | undefined;
   expiry: number | undefined;
   forward: number | undefined; // 9-dec fixed point
-  strikeLo: number | undefined; // shared ladder domain, low edge (9-dec)
-  strikeHi: number | undefined; // shared ladder domain, high edge
+  strikeLo: number | undefined; // tradeable ladder domain, low edge (9-dec)
+  strikeHi: number | undefined; // tradeable ladder domain, high edge
   selectedStrike: number | undefined;
   hoveredStrike: number | null;
 }
 
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
-/** Live SVI implied-vol smile — the analytics hero, sharing the ladder's strike X-axis. */
+/** Live SVI implied-vol smile — the analytics hero. Plots the full surface over a
+ *  wide moneyness range so the curve reads as a smile, with the tradeable band,
+ *  ATM and the selected strike marked on it. */
 export function VolSmile({ oracleId, expiry, forward, strikeLo, strikeHi, selectedStrike, hoveredStrike }: VolSmileProps) {
   const { data: svi, isPending } = useSvi(oracleId);
   const gradId = useId();
@@ -29,13 +35,13 @@ export function VolSmile({ oracleId, expiry, forward, strikeLo, strikeHi, select
   const innerW = W - PAD.left - PAD.right;
   const innerH = H - PAD.top - PAD.bottom;
 
-  const ready =
-    svi && forward !== undefined && strikeLo !== undefined && strikeHi !== undefined && strikeHi > strikeLo && T > 0;
+  const ready = svi && forward !== undefined && forward > 0 && T > 0;
 
   let chart: {
     line: string;
     area: string;
     atmX: number;
+    band: { x: number; w: number } | null;
     yTicks: { pos: number; label: string }[];
     xTicks: { pos: number; label: string; anchor: "start" | "middle" | "end" }[];
     dot: (s: number | null | undefined) => { x: number; y: number } | null;
@@ -44,18 +50,19 @@ export function VolSmile({ oracleId, expiry, forward, strikeLo, strikeHi, select
   } | null = null;
 
   if (ready) {
-    const lo = strikeLo!;
-    const hi = strikeHi!;
     const fwd = forward!;
+    // Wide surface domain centered on the forward (market's real strike span).
+    const lo = fwd * Math.exp(-K_HALF);
+    const hi = fwd * Math.exp(K_HALF);
     const strikeAt = (i: number) => lo + ((hi - lo) * i) / (N - 1);
     const ivs = Array.from({ length: N }, (_, i) => impliedVol(svi!, strikeAt(i), fwd, T));
 
     if (ivs.every((v) => Number.isFinite(v) && v > 0)) {
       const vLo = Math.min(...ivs);
       const vHi = Math.max(...ivs);
-      const span = Math.max(vHi - vLo, 0.004);
-      const yLo = (vLo + vHi) / 2 - span * 0.62;
-      const yHi = (vLo + vHi) / 2 + span * 0.62;
+      const span = Math.max(vHi - vLo, 0.01);
+      const yLo = vLo - span * 0.12;
+      const yHi = vHi + span * 0.18;
       const x = (s: number) => PAD.left + ((s - lo) / (hi - lo)) * innerW;
       const y = (iv: number) => PAD.top + (1 - (iv - yLo) / (yHi - yLo)) * innerH;
 
@@ -71,6 +78,15 @@ export function VolSmile({ oracleId, expiry, forward, strikeLo, strikeHi, select
         return Number.isFinite(iv) ? { x: x(s), y: y(iv) } : null;
       };
 
+      // Tradeable ladder window, marked on the surface (min 7px so the sliver shows).
+      let band: { x: number; w: number } | null = null;
+      if (strikeLo !== undefined && strikeHi !== undefined) {
+        const bx0 = x(Math.max(strikeLo, lo));
+        const bx1 = x(Math.min(strikeHi, hi));
+        const w = Math.max(bx1 - bx0, 7);
+        band = { x: (bx0 + bx1) / 2 - w / 2, w };
+      }
+
       const atIv = selectedStrike != null ? impliedVol(svi!, selectedStrike, fwd, T) : NaN;
       const atLabel =
         selectedStrike != null && Number.isFinite(atIv)
@@ -78,22 +94,17 @@ export function VolSmile({ oracleId, expiry, forward, strikeLo, strikeHi, select
           : null;
 
       // Skew sign: IV at the low wing vs the high wing tells you which tail is bid.
-      const wingLo = impliedVol(svi!, lo, fwd, T);
-      const wingHi = impliedVol(svi!, hi, fwd, T);
+      const wingLo = ivs[0];
+      const wingHi = ivs[N - 1];
       const skew =
-        Number.isFinite(wingLo) && Number.isFinite(wingHi)
-          ? wingLo > wingHi
-            ? "put skew · downside bid"
-            : wingHi > wingLo
-              ? "call skew · upside bid"
-              : "flat"
-          : null;
+        Math.abs(wingLo - wingHi) < 0.005 ? "flat" : wingLo > wingHi ? "put skew · downside bid" : "call skew · upside bid";
 
       chart = {
         line,
         area,
         atmX: x(fwd),
-        yTicks: [0.15, 0.5, 0.85].map((f) => ({
+        band,
+        yTicks: [0.12, 0.5, 0.88].map((f) => ({
           pos: PAD.top + (1 - f) * innerH,
           label: `${((yLo + f * (yHi - yLo)) * 100).toFixed(0)}%`,
         })),
@@ -139,6 +150,9 @@ export function VolSmile({ oracleId, expiry, forward, strikeLo, strikeHi, select
               </text>
             </g>
           ))}
+          {chart.band && (
+            <rect className="fill-accent" height={innerH} opacity={0.09} width={chart.band.w} x={chart.band.x} y={PAD.top} />
+          )}
           <line className="stroke-hairline-strong" strokeDasharray="3 3" x1={chart.atmX} x2={chart.atmX} y1={PAD.top} y2={H - PAD.bottom} />
           <text className="fill-ink-tertiary text-[9px] uppercase tracking-wide" x={chart.atmX + 4} y={PAD.top + 9}>
             ATM
